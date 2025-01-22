@@ -1,35 +1,29 @@
 version: "3.8"
 
 services:
-  service-name1:
+  hotel-booking:
     build:
       context: .
-      dockerfile: build/docker/service-name1.Dockerfile
-    image: your-docker-repo/service-name1
-    container_name: service-name1
+      dockerfile: build/docker/hotel.Dockerfile
+    container_name: hotel-booking
     ports:
       - "8080:8080" # Mapping the port 8080 from container to host machine
     networks:
       - service-network
     environment:
       - ENVIRONMENT=development
-    depends_on:
-      - service-name2 # If service-name1 depends on service-name2
 
-  service-name2:
+  flight-booking:
     build:
       context: .
-      dockerfile: build/docker/service-name2.Dockerfile
-    image: your-docker-repo/service-name2
-    container_name: service-name2
+      dockerfile: build/docker/flight.Dockerfile
+    container_name: flight-booking
     ports:
       - "9090:9090" # Mapping the port 9090 from container to host machine
     networks:
       - service-network
     environment:
       - ENVIRONMENT=development
-    depends_on:
-      - service-name1 # If service-name2 depends on service-name1
 
 networks:
   service-network:

@@ -1,7 +1,7 @@
 package hotelbookingservice
 
 import (
-	"microservices-travel-backend/internal/flight-booking/adapters/http"
+	"microservices-travel-backend/internal/flight-booking/adapters/api/"
 	"microservices-travel-backend/internal/flight-booking/adapters/repositories"
 	"microservices-travel-backend/internal/flight-booking/infrastructure"
 	"microservices-travel-backend/internal/flight-booking/services"

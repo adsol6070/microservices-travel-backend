@@ -14,7 +14,7 @@ RUN go mod tidy
 COPY . .
 
 # Build the Go app
-RUN GOOS=linux GOARCH=amd64 go build -o /go/bin/service-name1 ./cmd/service-name1
+RUN GOOS=linux GOARCH=amd64 go build -o /go/bin/hotel-booking-service ./cmd/hotel-booking-service
 
 # Start a new stage from a smaller image to run the service
 FROM alpine:latest  
@@ -23,10 +23,10 @@ FROM alpine:latest
 RUN apk --no-cache add ca-certificates
 
 # Copy the pre-built binary from the previous stage
-COPY --from=builder /go/bin/service-name1 /usr/local/bin/service-name1
+COPY --from=builder /go/bin/hotel-booking-service  /usr/local/bin/hotel-booking-service
 
 # Expose the port the service will run on
 EXPOSE 8080
 
 # Command to run the executable
-CMD ["service-name1"]
+CMD ["hotel-booking-service"]

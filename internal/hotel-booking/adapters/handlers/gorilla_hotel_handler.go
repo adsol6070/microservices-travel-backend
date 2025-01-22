@@ -1,12 +1,12 @@
-package http
+package handlers
 
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/gorilla/mux"
 	"microservices-travel-backend/internal/hotel-booking/domain/models"
 	"microservices-travel-backend/internal/hotel-booking/domain/ports"
 	"net/http"
-	"strings"
 )
 
 type HotelHandler struct {
@@ -17,13 +17,28 @@ func NewHotelHandler(service ports.HotelService) *HotelHandler {
 	return &HotelHandler{service: service}
 }
 
-// CreateHotel handles creating a new hotel
-func (h *HotelHandler) CreateHotel(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+func (h *HotelHandler) RegisterRoutes(router *mux.Router)  {
+	// Hotel routes
+	hotelRouter := router.PathPrefix("/hotels").Subrouter()
+	hotelRouter.HandleFunc("/", h.GetHotels).Methods(http.MethodGet)
+	hotelRouter.HandleFunc("/{id}", h.GetHotelByID).Methods(http.MethodGet)
+	hotelRouter.HandleFunc("/", h.CreateHotel).Methods(http.MethodPost)
+	hotelRouter.HandleFunc("/{id}", h.UpdateHotel).Methods(http.MethodPatch)
+	hotelRouter.HandleFunc("/{id}", h.DeleteHotel).Methods(http.MethodDelete)
+}
+
+func (h *HotelHandler) GetHotels(w http.ResponseWriter, r *http.Request) {
+	hotels, err := h.service.GetAllHotels()
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Error: %v", err), http.StatusInternalServerError)
 		return
 	}
 
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(hotels)
+}
+
+func (h *HotelHandler) CreateHotel(w http.ResponseWriter, r *http.Request) {
 	var hotel models.Hotel
 
 	// Parse JSON body
@@ -43,14 +58,8 @@ func (h *HotelHandler) CreateHotel(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(createdHotel)
 }
 
-// GetHotelByID handles fetching a hotel by ID
 func (h *HotelHandler) GetHotelByID(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
-	id := strings.TrimPrefix(r.URL.Path, "/hotels/")
+	id := mux.Vars(r)["id"]
 
 	hotel, err := h.service.GetHotelByID(id)
 	if err != nil {
@@ -62,14 +71,8 @@ func (h *HotelHandler) GetHotelByID(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(hotel)
 }
 
-// UpdateHotel handles updating an existing hotel
 func (h *HotelHandler) UpdateHotel(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPut {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
-	id := strings.TrimPrefix(r.URL.Path, "/hotels/")
+	id := mux.Vars(r)["id"]
 
 	var hotel models.Hotel
 	err := json.NewDecoder(r.Body).Decode(&hotel)
@@ -88,14 +91,8 @@ func (h *HotelHandler) UpdateHotel(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(updatedHotel)
 }
 
-// DeleteHotel handles deleting a hotel by ID
 func (h *HotelHandler) DeleteHotel(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodDelete {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
-	id := strings.TrimPrefix(r.URL.Path, "/hotels/")
+	id := mux.Vars(r)["id"]
 
 	err := h.service.DeleteHotel(id)
 	if err != nil {

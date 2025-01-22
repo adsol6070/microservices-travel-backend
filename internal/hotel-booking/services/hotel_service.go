@@ -13,6 +13,11 @@ func NewHotelService(db ports.HotelDB) *HotelService {
 	return &HotelService{db: db}
 }
 
+// GetAllHotels retrieves all hotels from the repository
+func (h *HotelService) GetAllHotels() ([]models.Hotel, error) {
+	return h.db.GetAllHotels()
+}
+
 func (h *HotelService) CreateHotel(hotel *models.Hotel) (*models.Hotel, error) {
 	createdHotel, err := h.db.CreateHotel(hotel)
 	if err != nil {

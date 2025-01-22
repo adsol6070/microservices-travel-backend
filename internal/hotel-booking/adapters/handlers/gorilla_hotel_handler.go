@@ -1,12 +1,12 @@
-package http
+package handlers
 
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/gorilla/mux"
 	"microservices-travel-backend/internal/hotel-booking/domain/models"
 	"microservices-travel-backend/internal/hotel-booking/domain/ports"
 	"net/http"
-	"strings"
 )
 
 type HotelHandler struct {
@@ -17,13 +17,18 @@ func NewHotelHandler(service ports.HotelService) *HotelHandler {
 	return &HotelHandler{service: service}
 }
 
-// CreateHotel handles creating a new hotel
-func (h *HotelHandler) CreateHotel(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
+func (h *HotelHandler) RegisterRoutes(router *mux.Router) {
+	// Hotel-related routes
+	router.HandleFunc("/hotels", h.CreateHotel).Methods(http.MethodPost)
+	router.HandleFunc("/hotels/{id}", h.GetHotelByID).Methods(http.MethodGet)
+	router.HandleFunc("/hotels/{id}", h.UpdateHotel).Methods(http.MethodPut)
+	router.HandleFunc("/hotels/{id}", h.DeleteHotel).Methods(http.MethodDelete)
 
+	// Testing route
+	router.HandleFunc("/test", h.TestRoute).Methods(http.MethodGet)
+}
+
+func (h *HotelHandler) CreateHotel(w http.ResponseWriter, r *http.Request) {
 	var hotel models.Hotel
 
 	// Parse JSON body
@@ -43,14 +48,8 @@ func (h *HotelHandler) CreateHotel(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(createdHotel)
 }
 
-// GetHotelByID handles fetching a hotel by ID
 func (h *HotelHandler) GetHotelByID(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
-	id := strings.TrimPrefix(r.URL.Path, "/hotels/")
+	id := mux.Vars(r)["id"]
 
 	hotel, err := h.service.GetHotelByID(id)
 	if err != nil {
@@ -62,14 +61,8 @@ func (h *HotelHandler) GetHotelByID(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(hotel)
 }
 
-// UpdateHotel handles updating an existing hotel
 func (h *HotelHandler) UpdateHotel(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPut {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
-	id := strings.TrimPrefix(r.URL.Path, "/hotels/")
+	id := mux.Vars(r)["id"]
 
 	var hotel models.Hotel
 	err := json.NewDecoder(r.Body).Decode(&hotel)
@@ -88,14 +81,8 @@ func (h *HotelHandler) UpdateHotel(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(updatedHotel)
 }
 
-// DeleteHotel handles deleting a hotel by ID
 func (h *HotelHandler) DeleteHotel(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodDelete {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
-	id := strings.TrimPrefix(r.URL.Path, "/hotels/")
+	id := mux.Vars(r)["id"]
 
 	err := h.service.DeleteHotel(id)
 	if err != nil {
@@ -104,4 +91,16 @@ func (h *HotelHandler) DeleteHotel(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusNoContent)
+}
+
+// TestRoute is a simple health check or testing route
+func (h *HotelHandler) TestRoute(w http.ResponseWriter, r *http.Request) {
+	// Respond with a simple JSON message to verify the service is working
+	response := map[string]string{
+		"status":  "OK",
+		"message": "Hotel booking service is up and running!",
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(response)
 }

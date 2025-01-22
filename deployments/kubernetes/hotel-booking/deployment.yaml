@@ -16,21 +16,15 @@ spec:
     spec:
       containers:
         - name: hotel-booking
-          image: my-docker-registry/service-name1:latest
-          imagePullPolicy: Always
+          image: deployments-hotel-booking
+          imagePullPolicy: Never
           ports:
-            - containerPort: 8080
+            - containerPort: 5000
           env:
             - name: SERVICE_NAME1_ENV
-              valueFrom:
-                configMapKeyRef:
-                  name: service-name1-config
-                  key: SERVICE_NAME1_ENV_VAR
+              value: default-value # Replace with your actual default value
             - name: DATABASE_URL
-              valueFrom:
-                secretKeyRef:
-                  name: service-name1-secrets
-                  key: db-url
+              value: your-database-url # Replace with your actual database URL
           resources:
             requests:
               memory: "256Mi"
@@ -41,13 +35,13 @@ spec:
           livenessProbe:
             httpGet:
               path: /healthz
-              port: 8080
+              port: 5000
             initialDelaySeconds: 30
             periodSeconds: 10
           readinessProbe:
             httpGet:
               path: /readiness
-              port: 8080
+              port: 5000
             initialDelaySeconds: 10
             periodSeconds: 5
 ---
@@ -60,6 +54,6 @@ spec:
     app: hotel-booking
   ports:
     - protocol: TCP
-      port: 80
-      targetPort: 8080
+      port: 5000
+      targetPort: 5000
   type: ClusterIP

@@ -1,20 +1,20 @@
-# Use the official Golang image as the build environment
-FROM golang:1.20-alpine AS builder
+# Use the official Golang image to build the Go app
+FROM golang:1.23-alpine AS builder
 
-# Set the Current Working Directory inside the container
+# Set the working directory inside the container
 WORKDIR /app
 
-# Copy the Go Modules and sum files
+# Copy the Go modules manifests
 COPY go.mod go.sum ./
 
-# Download all dependencies. Dependencies will be cached if the go.mod and go.sum files are not changed
-RUN go mod tidy
+# Download Go modules
+RUN go mod download
 
 # Copy the source code into the container
 COPY . .
 
 # Build the Go app
-RUN GOOS=linux GOARCH=amd64 go build -o /go/bin/service-name2 ./cmd/service-name2
+RUN GOOS=linux GOARCH=amd64 go build -o /go/bin/flight-booking-service ./cmd/flight-booking-service
 
 # Start a new stage from a smaller image to run the service
 FROM alpine:latest  
@@ -23,10 +23,13 @@ FROM alpine:latest
 RUN apk --no-cache add ca-certificates
 
 # Copy the pre-built binary from the previous stage
-COPY --from=builder /go/bin/service-name2 /usr/local/bin/service-name2
+COPY --from=builder /go/bin/flight-booking-service /usr/local/bin/flight-booking-service
+
+# Copy the configuration files correctly
+COPY ./config/env/dev/flight-booking.yaml /usr/local/bin/config/env/dev/flight-booking.yaml
 
 # Expose the port the service will run on
 EXPOSE 9090
 
 # Command to run the executable
-CMD ["service-name2"]
+CMD ["/usr/local/bin/flight-booking-service"]

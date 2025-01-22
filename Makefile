@@ -49,7 +49,7 @@ deploy-helm-$(SERVICE_NAME2): ## Deploy service-name2 using Helm
 
 ## Expose services using kubectl port-forward
 forward-$(SERVICE_NAME1): ## Forward service-name1 port
-	$(KUBECTL) port-forward service/$(SERVICE_NAME1) 8080:8080
+	$(KUBECTL) port-forward service/$(SERVICE_NAME1) 5000:5000
 
 forward-$(SERVICE_NAME2): ## Forward service-name2 port
 	$(KUBECTL) port-forward service/$(SERVICE_NAME2) 9090:9090

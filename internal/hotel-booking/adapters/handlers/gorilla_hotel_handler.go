@@ -102,3 +102,15 @@ func (h *HotelHandler) DeleteHotel(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusNoContent)
 }
+
+// TestRoute is a simple health check or testing route
+func (h *HotelHandler) TestRoute(w http.ResponseWriter, r *http.Request) {
+	// Respond with a simple JSON message to verify the service is working
+	response := map[string]string{
+		"status":  "OK",
+		"message": "Hotel booking service is up and running!",
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(response)
+}

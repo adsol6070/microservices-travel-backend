@@ -4,7 +4,7 @@ import (
 	"log"
 	"microservices-travel-backend/internal/hotel-booking/adapters/handlers"
 	"microservices-travel-backend/internal/hotel-booking/adapters/repositories"
-	"microservices-travel-backend/internal/hotel-booking/infrastructure"
+	// "microservices-travel-backend/internal/hotel-booking/infrastructure"
 	"microservices-travel-backend/internal/hotel-booking/services"
 	"net/http"
 
@@ -12,7 +12,7 @@ import (
 )
 
 func main() {
-	config.LoadConfig("dev")
+	// config.LoadConfig("dev")
 	repo := repositories.NewDynamoDBRepository()
 	// repo := repositories.PostgresBookingRepository()
 

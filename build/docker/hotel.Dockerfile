@@ -1,16 +1,16 @@
-# Use the official Golang image as the build environment
-FROM golang:1.20-alpine AS builder
+# Use the official Golang image to build the Go app
+FROM golang:1.23-alpine AS builder
 
-# Set the Current Working Directory inside the container
+# Set the working directory inside the container
 WORKDIR /app
 
-# Copy the Go Modules and sum files
+# Copy the Go modules manifests
 COPY go.mod go.sum ./
 
-# Download all dependencies. Dependencies will be cached if the go.mod and go.sum files are not changed
-RUN go mod tidy
+# Download Go modules
+RUN go mod download
 
-# Copy the source code into the container
+# Copy the source code
 COPY . .
 
 # Build the Go app
@@ -23,10 +23,13 @@ FROM alpine:latest
 RUN apk --no-cache add ca-certificates
 
 # Copy the pre-built binary from the previous stage
-COPY --from=builder /go/bin/hotel-booking-service  /usr/local/bin/hotel-booking-service
+COPY --from=builder /go/bin/hotel-booking-service /usr/local/bin/hotel-booking-service
+
+# Copy the configuration files correctly
+COPY ./config/env/dev/hotel-booking.yaml /usr/local/bin/config/env/dev/hotel-booking.yaml
 
 # Expose the port the service will run on
-EXPOSE 8080
+EXPOSE 5000
 
 # Command to run the executable
-CMD ["hotel-booking-service"]
+CMD ["/usr/local/bin/hotel-booking-service"]

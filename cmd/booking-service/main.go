@@ -14,7 +14,6 @@ import (
 func main() {
 	config.LoadConfig("dev")
 	repo := repositories.NewDynamoDBRepository()
-	// repo := repositories.PostgresBookingRepository()
 
 	service := services.BookingService(repo)
 

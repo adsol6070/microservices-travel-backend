@@ -19,13 +19,10 @@ func NewFlightHandler(service ports.FlightService) *FlightHandler {
 }
 
 func (h *FlightHandler) RegisterRoutes(r *mux.Router) {
-	// Flight routes
 	r.HandleFunc("/flights", h.CreateFlight).Methods(http.MethodPost)
 	r.HandleFunc("/flights/{id}", h.GetFlightByID).Methods(http.MethodGet)
 	r.HandleFunc("/flights/{id}", h.UpdateFlight).Methods(http.MethodPut)
 	r.HandleFunc("/flights/{id}", h.DeleteFlight).Methods(http.MethodDelete)
-
-	// Testing route
 	r.HandleFunc("/test", h.TestRoute).Methods(http.MethodGet)
 }
 

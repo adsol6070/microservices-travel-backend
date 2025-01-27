@@ -8,8 +8,9 @@ services:
       - "5000:5000"
     networks:
       - service-network
-    environment:
-      - ENVIRONMENT=development
+    env_file:
+      - config/shared/dev.env
+      - config/hotel-booking/dev.env
 
   flight-booking:
     build:
@@ -20,8 +21,9 @@ services:
       - "9090:9090"
     networks:
       - service-network
-    environment:
-      - ENVIRONMENT=development
+    env_file:
+      - config/shared/dev.env
+      - config/flight-booking/dev.env
 
 networks:
   service-network:

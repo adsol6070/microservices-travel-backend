@@ -2,29 +2,50 @@ package repositories
 
 import (
 	"fmt"
+	"log"
 	"microservices-travel-backend/internal/flight-booking/domain/models"
+	"os"
+
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
 )
 
-type DynamoDBBookingRepository struct {
+type PostgresBookingRepository struct {
+	DB *gorm.DB
 }
 
-func NewDynamoDBRepository() *DynamoDBBookingRepository {
-	return &DynamoDBBookingRepository{}
+func NewPostgresRepository() (*PostgresBookingRepository, error) {
+	databaseURL := os.Getenv("DATABASE_URL")
+	databaseUsername := os.Getenv("DATABASE_USERNAME")
+	databasePassword := os.Getenv("DATABASE_PASSWORD")
+	databasePort := os.Getenv("DATABASE_PORT")
+
+	dsn := fmt.Sprintf("postgres://%s:%s@%s:%s/?sslmode=require",
+		databaseUsername, databasePassword, databaseURL, databasePort)
+
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	if err != nil {
+		return nil, fmt.Errorf("failed to connect to database: %v", err)
+	}
+
+	log.Println("Successfully connected to the database")
+
+	return &PostgresBookingRepository{DB: db}, nil
 }
 
-func (r *DynamoDBBookingRepository) CreateFlight(flight *models.Flight) (*models.Flight, error) {
+func (r *PostgresBookingRepository) CreateFlight(flight *models.Flight) (*models.Flight, error) {
 	fmt.Println("Flight created in DynamoDB")
 	return flight, nil
 }
 
-func (r *DynamoDBBookingRepository) GetFlightByID(id string) (*models.Flight, error) {
+func (r *PostgresBookingRepository) GetFlightByID(id string) (*models.Flight, error) {
 	return &models.Flight{}, nil
 }
 
-func (r *DynamoDBBookingRepository) UpdateFlight(id string, flight *models.Flight) (*models.Flight, error) {
+func (r *PostgresBookingRepository) UpdateFlight(id string, flight *models.Flight) (*models.Flight, error) {
 	return flight, nil
 }
 
-func (r *DynamoDBBookingRepository) DeleteFlight(id string) error {
+func (r *PostgresBookingRepository) DeleteFlight(id string) error {
 	return nil
 }

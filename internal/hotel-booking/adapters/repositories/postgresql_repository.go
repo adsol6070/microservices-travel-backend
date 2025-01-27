@@ -2,7 +2,10 @@ package repositories
 
 import (
 	"fmt"
+	"log"
 	"microservices-travel-backend/internal/hotel-booking/domain/models"
+	"os"
+
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
@@ -11,13 +14,22 @@ type PostgresBookingRepository struct {
 	DB *gorm.DB
 }
 
-func NewPostgresRepository(dsn string) (*PostgresBookingRepository, error) {
+func NewPostgresRepository() (*PostgresBookingRepository, error) {
+	databaseURL := os.Getenv("DATABASE_URL")
+	databaseUsername := os.Getenv("DATABASE_USERNAME")
+	databasePassword := os.Getenv("DATABASE_PASSWORD")
+	databasePort := os.Getenv("DATABASE_PORT")
+
+	dsn := fmt.Sprintf("postgres://%s:%s@%s:%s/?sslmode=require",
+		databaseUsername, databasePassword, databaseURL, databasePort)
+
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to database: %v", err)
 	}
-	
-	db.AutoMigrate(&models.Hotel{})
+
+	log.Println("Successfully connected to the database")
+
 	return &PostgresBookingRepository{DB: db}, nil
 }
 
@@ -29,11 +41,11 @@ func (r *PostgresBookingRepository) GetAllHotels() ([]models.Hotel, error) {
 	return hotels, nil
 }
 
-func (r *PostgresBookingRepository) CreateHotel(hotel *models.Hotel) (*models.Hotel, error) {
+func (r *PostgresBookingRepository) SaveHotel(hotel *models.Hotel) error {
 	if err := r.DB.Create(hotel).Error; err != nil {
-		return nil, fmt.Errorf("error creating hotel: %v", err)
+		return fmt.Errorf("error creating hotel: %v", err)
 	}
-	return hotel, nil
+	return nil
 }
 
 func (r *PostgresBookingRepository) GetHotelByID(id string) (*models.Hotel, error) {

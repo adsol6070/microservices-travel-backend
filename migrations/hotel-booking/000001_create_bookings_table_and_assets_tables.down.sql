@@ -1,0 +1,15 @@
+DROP TABLE IF EXISTS bookings;
+
+DROP TYPE IF EXISTS booking_status;
+
+DROP EXTENSION IF EXISTS "uuid-ossp";
+
+DROP TABLE IF EXISTS assets;
+
+DROP TYPE IF EXISTS asset_type;
+
+DROP TABLE IF EXISTS hotels;
+
+DROP TABLE IF EXISTS branches;
+
+DROP TABLE IF EXISTS rooms;

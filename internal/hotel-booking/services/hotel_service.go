@@ -1,51 +1,68 @@
 package services
 
 import (
+	"errors"
+	"log"
+	"microservices-travel-backend/internal/hotel-booking/domain/mapper"
 	"microservices-travel-backend/internal/hotel-booking/domain/models"
 	"microservices-travel-backend/internal/hotel-booking/domain/ports"
 )
 
 type HotelService struct {
-	db ports.HotelDB
+	db          ports.HotelDB         // Local database interface
+	providers   []ports.HotelProvider // External providers interface
+	hotelMapper *mapper.HotelMapper   // Dependency injected mapper
 }
 
-func NewHotelService(db ports.HotelDB) *HotelService {
-	return &HotelService{db: db}
-}
-
-// GetAllHotels retrieves all hotels from the repository
-func (h *HotelService) GetAllHotels() ([]models.Hotel, error) {
-	return h.db.GetAllHotels()
-}
-
-func (h *HotelService) CreateHotel(hotel *models.Hotel) (*models.Hotel, error) {
-	createdHotel, err := h.db.CreateHotel(hotel)
-	if err != nil {
-		return nil, err
+// NewHotelService initializes and returns a new HotelService instance.
+func NewHotelService(db ports.HotelDB, providers []ports.HotelProvider, hotelMapper *mapper.HotelMapper) *HotelService {
+	return &HotelService{
+		db:          db,
+		providers:   providers,
+		hotelMapper: hotelMapper,
 	}
-	return createdHotel, nil
 }
 
-func (h *HotelService) GetHotelByID(id string) (*models.Hotel, error) {
-	hotel, err := h.db.GetHotelByID(id)
-	if err != nil {
-		return nil, err
-	}
-	return hotel, nil
-}
+// FetchAndCacheHotels fetches multiple hotels from external providers, maps their responses to local format, and caches them in the local database.
+func (s *HotelService) FetchHotels() ([]models.Hotel, error) {
+	var allFetchedHotels []models.Hotel
+	hotelCache := make(map[string]models.Hotel) // To avoid duplicates across providers
 
-func (h *HotelService) UpdateHotel(id string, hotel *models.Hotel) (*models.Hotel, error) {
-	updatedHotel, err := h.db.UpdateHotel(id, hotel)
-	if err != nil {
-		return nil, err
-	}
-	return updatedHotel, nil
-}
+	// Iterate through the list of external providers.
+	for _, provider := range s.providers {
+		log.Printf("Fetching hotel data from provider: %T\n", provider)
 
-func (h *HotelService) DeleteHotel(id string) error {
-	err := h.db.DeleteHotel(id)
-	if err != nil {
-		return err
+		// Fetch hotel details from the provider.
+		providerHotels, err := provider.GetHotels()
+		if err != nil {
+			log.Printf("Provider %T failed to fetch hotels: %v\n", provider, err)
+			continue
+		}
+
+		// Map the provider-specific hotels to the local hotel format.
+		for _, externalHotel := range providerHotels {
+			mappedHotel := s.hotelMapper.MapToLocalHotelFormat(externalHotel)
+
+			// Avoid duplicates using the hotel ID.
+			if _, exists := hotelCache[mappedHotel.ID]; !exists {
+				hotelCache[mappedHotel.ID] = mappedHotel
+				allFetchedHotels = append(allFetchedHotels, mappedHotel)
+			}
+		}
 	}
-	return nil
+
+	if len(allFetchedHotels) == 0 {
+		return nil, errors.New("no hotels found from any provider")
+	}
+
+	// Cache all unique hotels into the local database.
+	for _, hotel := range allFetchedHotels {
+		err := s.db.SaveHotel(&hotel)
+		if err != nil {
+			log.Printf("Failed to save hotel %s to local DB: %v\n", hotel.ID, err)
+		}
+	}
+
+	log.Printf("Successfully cached %d hotels in local database.\n", len(allFetchedHotels))
+	return allFetchedHotels, nil
 }

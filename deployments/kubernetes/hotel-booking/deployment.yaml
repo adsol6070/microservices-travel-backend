@@ -20,11 +20,9 @@ spec:
           imagePullPolicy: Never
           ports:
             - containerPort: 5000
-          env:
-            - name: SERVICE_NAME1_ENV
-              value: default-value # Replace with your actual default value
-            - name: DATABASE_URL
-              value: your-database-url # Replace with your actual database URL
+          envFrom:
+            - secretRef:
+                name: shared-secret
           resources:
             requests:
               memory: "256Mi"

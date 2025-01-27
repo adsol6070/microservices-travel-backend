@@ -1,0 +1,213 @@
+openapi: 3.0.0
+info:
+  title: Booking Service API
+  description: RESTful API for managing hotel and flight bookings.
+  version: 1.0.0
+  contact:
+    name: Support Team
+    email: support@example.com
+
+servers:
+  - url: https://api.example.com/v1
+    description: Production Server
+  - url: https://staging-api.example.com/v1
+    description: Staging Server
+
+paths:
+  /hotels:
+    get:
+      summary: Get a list of hotels
+      description: Retrieve all available hotels.
+      responses:
+        "200":
+          description: A list of hotels
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Hotel"
+    post:
+      summary: Create a hotel booking
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/HotelBookingRequest"
+      responses:
+        "201":
+          description: Booking created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BookingResponse"
+
+  /hotels/{hotelId}:
+    get:
+      summary: Get hotel details
+      parameters:
+        - name: hotelId
+          in: path
+          required: true
+          description: ID of the hotel
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Hotel details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Hotel"
+    delete:
+      summary: Cancel a hotel booking
+      parameters:
+        - name: hotelId
+          in: path
+          required: true
+          description: ID of the booking
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Booking canceled successfully
+
+  /flights:
+    get:
+      summary: Get a list of flights
+      description: Retrieve all available flights.
+      responses:
+        "200":
+          description: A list of flights
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Flight"
+    post:
+      summary: Create a flight booking
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FlightBookingRequest"
+      responses:
+        "201":
+          description: Booking created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BookingResponse"
+
+  /flights/{flightId}:
+    get:
+      summary: Get flight details
+      parameters:
+        - name: flightId
+          in: path
+          required: true
+          description: ID of the flight
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Flight details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Flight"
+    delete:
+      summary: Cancel a flight booking
+      parameters:
+        - name: flightId
+          in: path
+          required: true
+          description: ID of the booking
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Booking canceled successfully
+
+components:
+  schemas:
+    Hotel:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        city:
+          type: string
+        rating:
+          type: number
+          format: float
+        price:
+          type: number
+          format: float
+
+    Flight:
+      type: object
+      properties:
+        id:
+          type: string
+        airline:
+          type: string
+        departure:
+          type: string
+        arrival:
+          type: string
+        price:
+          type: number
+          format: float
+
+    HotelBookingRequest:
+      type: object
+      properties:
+        hotelId:
+          type: string
+        customerName:
+          type: string
+        checkInDate:
+          type: string
+          format: date
+        checkOutDate:
+          type: string
+          format: date
+        numberOfGuests:
+          type: integer
+          format: int32
+
+    FlightBookingRequest:
+      type: object
+      properties:
+        flightId:
+          type: string
+        passengerName:
+          type: string
+        seatPreference:
+          type: string
+          enum:
+            - Window
+            - Aisle
+            - Middle
+        baggageAllowance:
+          type: integer
+
+    BookingResponse:
+      type: object
+      properties:
+        bookingId:
+          type: string
+        status:
+          type: string
+          enum:
+            - Confirmed
+            - Pending
+            - Canceled
+        message:
+          type: string

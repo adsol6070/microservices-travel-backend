@@ -5,6 +5,7 @@ import (
 	"log"
 	// "microservices-travel-backend/internal/hotel-booking/domain/models"
 	"microservices-travel-backend/internal/hotel-booking/domain/ports"
+	"microservices-travel-backend/pkg/middlewares"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -20,6 +21,9 @@ func NewHotelHandler(service ports.HotelService) *HotelHandler {
 
 func (h *HotelHandler) RegisterRoutes(router *mux.Router) {
 	hotelRouter := router.PathPrefix("/hotels").Subrouter()
+
+	hotelRouter.Use(middleware.JWTMiddleware)
+
 	hotelRouter.HandleFunc("/", h.SearchHotelsHandler).Methods(http.MethodGet)
 	// hotelRouter.HandleFunc("/{id}", h.GetHotelByID).Methods(http.MethodGet)
 	// hotelRouter.HandleFunc("/", h.CreateHotelHandler).Methods(http.MethodPost)

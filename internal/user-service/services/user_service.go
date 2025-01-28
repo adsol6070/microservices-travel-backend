@@ -1,44 +1,77 @@
-package services
+package service
 
 import (
-	"context"
 	"errors"
 	"microservices-travel-backend/internal/user-service/domain/models"
 	"microservices-travel-backend/internal/user-service/domain/ports"
 )
 
 type UserService struct {
-	repo ports.UserDBPort
+	userRepo ports.UserRepositoryPort
 }
 
-func NewUserService(repo ports.UserDBPort) *UserService {
-	return &UserService{repo: repo}
+func NewUserService(userRepo ports.UserRepositoryPort) *UserService {
+	return &UserService{userRepo: userRepo}
 }
 
-func (s *UserService) CreateUser(ctx context.Context, user *models.User) error {
-	if user == nil {
-		return errors.New("user is nil")
+func (s *UserService) CreateUser(user models.User) (*models.User, error) {
+	createdUser, err := s.userRepo.Create(user)
+	if err != nil {
+		return nil, err
 	}
-	return s.repo.CreateUser(ctx, user)
+
+	return createdUser, nil
 }
 
-func (s *UserService) GetUserByID(ctx context.Context, id string) (*models.User, error) {
-	if id == "" {
-		return nil, errors.New("id is empty")
+func (s *UserService) Login(creds models.Credentials) (string, error) {
+	user, err := s.userRepo.GetByEmail(creds.Email)
+	if err != nil {
+		return "", errors.New("invalid credentials")
 	}
-	return s.repo.GetUserByID(ctx, id)
+
+	// Validate password (in practice, compare hashed passwords)
+	if user.Password != creds.Password {
+		return "", errors.New("invalid credentials")
+	}
+
+	// Generate token (for simplicity, returning a dummy token here)
+	token := "dummy-jwt-token" // You can use JWT library to generate a proper token
+	return token, nil
 }
 
-func (s *UserService) UpdateUser(ctx context.Context, user *models.User) error {
-	if user == nil {
-		return errors.New("user is nil")
+func (s *UserService) GetUserByID(id string) (*models.User, error) {
+	user, err := s.userRepo.GetByID(id)
+	if err != nil {
+		return nil, err
 	}
-	return s.repo.UpdateUser(ctx, user)
+
+	return user, nil
 }
 
-func (s *UserService) DeleteUser(ctx context.Context, id string) error {
-	if id == "" {
-		return errors.New("id is empty")
+func (s *UserService) GetAllUsers() ([]models.User, error) {
+	users, err := s.userRepo.GetAll()
+	if err != nil {
+		return nil, err
 	}
-	return s.repo.DeleteUser(ctx, id)
+
+	return users, nil
+}
+
+func (s *UserService) UpdateUser(id string, user models.User) (*models.User, error) {
+	// You can add validation here (e.g., ensuring the user exists)
+	updatedUser, err := s.userRepo.Update(id, user)
+	if err != nil {
+		return nil, err
+	}
+
+	return updatedUser, nil
+}
+
+func (s *UserService) DeleteUser(id string) error {
+	err := s.userRepo.Delete(id)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

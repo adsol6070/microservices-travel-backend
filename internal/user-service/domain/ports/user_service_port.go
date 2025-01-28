@@ -1,15 +1,12 @@
 package ports
 
-import (
-	"context"
-	"microservices-travel-backend/internal/user-service/domain/models"
-)
+import "microservices-travel-backend/internal/user-service/domain/models"
 
-// UserServicePort defines the interface for user authentication services.
 type UserServicePort interface {
-	RegisterUser(ctx context.Context, user *models.User) (*models.User, error)
-	LoginUser(ctx context.Context, email, password string) (string, error)
-	GetUserByID(ctx context.Context, userID string) (*models.User, error)
-	UpdateUser(ctx context.Context, user *models.User) (*models.User, error)
-	DeleteUser(ctx context.Context, userID string) error
+	CreateUser(user models.User) (*models.User, error)
+	Login(creds models.Credentials) (string, error)
+	GetUserByID(id string) (*models.User, error)
+	GetAllUsers() ([]models.User, error)
+	UpdateUser(id string, user models.User) (*models.User, error)
+	DeleteUser(id string) error
 }

@@ -12,7 +12,12 @@ import (
 
 func main() {
 
-	userRepo := repositories.NewPostgreSQLUserRepository(nil)
+	userRepo, err := repositories.NewPostgreSQLUserRepository()
+
+	if err != nil {
+		log.Fatalf("Failed to create repository: %v", err)
+	}
+
 	userService := service.NewUserService(userRepo)
 	userHandler := handlers.NewUserHandler(userService)
 

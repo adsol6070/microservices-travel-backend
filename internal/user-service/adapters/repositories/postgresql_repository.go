@@ -1,96 +1,105 @@
 package repositories
 
 import (
-	"database/sql"
 	"errors"
+	"fmt"
 	"microservices-travel-backend/internal/user-service/domain/models"
-	"microservices-travel-backend/internal/user-service/domain/ports"
+	"os"
+
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
 )
 
+// PostgreSQLUserRepository struct holds the GORM DB connection
 type PostgreSQLUserRepository struct {
-	db *sql.DB
+	db *gorm.DB
 }
 
-func NewPostgreSQLUserRepository(db *sql.DB) ports.UserRepositoryPort {
-	return &PostgreSQLUserRepository{db: db}
-}
+// NewPostgreSQLUserRepository creates a new PostgreSQLUserRepository instance
+func NewPostgreSQLUserRepository() (*PostgreSQLUserRepository, error) {
+	databaseURL := os.Getenv("DATABASE_URL")
+	databaseUsername := os.Getenv("DATABASE_USERNAME")
+	databasePassword := os.Getenv("DATABASE_PASSWORD")
+	databasePort := os.Getenv("DATABASE_PORT")
 
-// Create creates a new user in the database
-func (repo *PostgreSQLUserRepository) Create(user models.User) (*models.User, error) {
-	query := `INSERT INTO users (id, email, name, password, created_at, updated_at) 
-	          VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`
-	err := repo.db.QueryRow(query, user.ID, user.Email, user.Name, user.Password, user.CreatedAt, user.UpdatedAt).Scan(&user.ID)
+	dsn := fmt.Sprintf("postgres://%s:%s@%s:%s/?sslmode=require",
+		databaseUsername, databasePassword, databaseURL, databasePort)
+
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
+		return nil, fmt.Errorf("failed to connect to database: %v", err)
+	}
+
+	return &PostgreSQLUserRepository{db: db}, nil
+}
+
+// Create creates a new user in the database using GORM
+func (repo *PostgreSQLUserRepository) Create(user models.User) (*models.User, error) {
+	if err := repo.db.Create(&user).Error; err != nil {
 		return nil, err
 	}
 	return &user, nil
 }
 
-// GetByID retrieves a user by their ID
+// GetByID retrieves a user by their ID using GORM
 func (repo *PostgreSQLUserRepository) GetByID(id string) (*models.User, error) {
 	var user models.User
-	query := `SELECT id, email, name, password FROM users WHERE id = $1`
-	err := repo.db.QueryRow(query, id).Scan(&user.ID, &user.Email, &user.Name, &user.Password)
-	if err == sql.ErrNoRows {
-		return nil, errors.New("user not found")
-	} else if err != nil {
+	if err := repo.db.First(&user, "id = ?", id).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, errors.New("user not found")
+		}
 		return nil, err
 	}
 	return &user, nil
 }
 
-// GetByEmail retrieves a user by their email
+// GetByEmail retrieves a user by their email using GORM
 func (repo *PostgreSQLUserRepository) GetByEmail(email string) (*models.User, error) {
 	var user models.User
-	query := `SELECT id, email, name, password FROM users WHERE email = $1`
-	err := repo.db.QueryRow(query, email).Scan(&user.ID, &user.Email, &user.Name, &user.Password)
-	if err == sql.ErrNoRows {
-		return nil, errors.New("user not found")
-	} else if err != nil {
+	if err := repo.db.First(&user, "email = ?", email).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, errors.New("user not found")
+		}
 		return nil, err
 	}
 	return &user, nil
 }
 
-// GetAll retrieves all users
+// GetAll retrieves all users using GORM
 func (repo *PostgreSQLUserRepository) GetAll() ([]models.User, error) {
-	rows, err := repo.db.Query(`SELECT id, email, name, password FROM users`)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
 	var users []models.User
-	for rows.Next() {
-		var user models.User
-		if err := rows.Scan(&user.ID, &user.Email, &user.Name, &user.Password); err != nil {
-			return nil, err
-		}
-		users = append(users, user)
-	}
-	if err := rows.Err(); err != nil {
+	if err := repo.db.Find(&users).Error; err != nil {
 		return nil, err
 	}
 	return users, nil
 }
 
-// Update updates a user's information
+// Update updates a user's information using GORM
 func (repo *PostgreSQLUserRepository) Update(id string, user models.User) (*models.User, error) {
-	query := `UPDATE users SET email = $1, name = $2, password = $3, updated_at = $4 WHERE id = $5 RETURNING id`
-	err := repo.db.QueryRow(query, user.Email, user.Name, user.Password, user.UpdatedAt, id).Scan(&user.ID)
-	if err == sql.ErrNoRows {
-		return nil, errors.New("user not found")
-	} else if err != nil {
+	var existingUser models.User
+	if err := repo.db.First(&existingUser, "id = ?", id).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, errors.New("user not found")
+		}
 		return nil, err
 	}
-	return &user, nil
+
+	// Updating user fields
+	if err := repo.db.Model(&existingUser).Updates(user).Error; err != nil {
+		return nil, err
+	}
+
+	// After successful update, reload the user
+	if err := repo.db.First(&existingUser, "id = ?", id).Error; err != nil {
+		return nil, err
+	}
+
+	return &existingUser, nil
 }
 
-// Delete removes a user by their ID
+// Delete removes a user by their ID using GORM
 func (repo *PostgreSQLUserRepository) Delete(id string) error {
-	query := `DELETE FROM users WHERE id = $1`
-	_, err := repo.db.Exec(query, id)
-	if err != nil {
+	if err := repo.db.Delete(&models.User{}, "id = ?", id).Error; err != nil {
 		return err
 	}
 	return nil

@@ -24,7 +24,7 @@ func main() {
 	bookingHandler.RegisterRoutes(router)
 
 	port := ":6000"
-	log.Printf("Starting booking service on port %s...", port)
+	log.Printf("Starting booking service port %s...", port)
 	err := http.ListenAndServe(port, router)
 	if err != nil {
 		log.Fatalf("Failed to start server: %v", err)

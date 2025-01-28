@@ -2,82 +2,101 @@ package handlers
 
 import (
 	"encoding/json"
+	"microservices-travel-backend/internal/user-service/domain/models"
+	"microservices-travel-backend/internal/user-service/domain/ports"
 	"net/http"
 
 	"github.com/gorilla/mux"
 )
 
-type User struct {
-	ID    string `json:"id"`
-	Name  string `json:"name"`
-	Email string `json:"email"`
+// Mock users data.
+var users = []models.User{
+	{ID: "1", Username: "John Doe", Email: "john@example.com", Password: "password123"},
+	{ID: "2", Username: "Jane Doe", Email: "jane@example.com", Password: "password123"},
 }
 
-var users = []User{
-	{ID: "1", Name: "John Doe", Email: "john@example.com"},
-	{ID: "2", Name: "Jane Doe", Email: "jane@example.com"},
+// UserHandler handles user-related operations.
+type UserHandler struct {
+	service ports.UserServicePort
 }
 
-func GetUsers(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(users)
+// NewUserHandler initializes a new UserHandler.
+func NewUserHandler(service ports.UserServicePort) *UserHandler {
+	return &UserHandler{service: service}
 }
 
-func GetUser(w http.ResponseWriter, r *http.Request) {
-	params := mux.Vars(r)
-	for _, user := range users {
-		if user.ID == params["id"] {
-			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(user)
+// RegisterAuthHandlers registers the auth-related routes.
+func (h *UserHandler) RegisterAuthHandlers(router *mux.Router) {
+	router.HandleFunc("/register", h.RegisterHandler).Methods("POST")
+	router.HandleFunc("/login", h.LoginHandler).Methods("POST")
+	router.HandleFunc("/logout", h.LogoutHandler).Methods("POST")
+}
+
+// RegisterHandler registers a new user.
+func (h *UserHandler) RegisterHandler(w http.ResponseWriter, r *http.Request) {
+	var user models.User
+	if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
+		http.Error(w, "Invalid request payload", http.StatusBadRequest)
+		return
+	}
+
+	// Validate required fields.
+	if user.Username == "" || user.Email == "" || user.Password == "" {
+		http.Error(w, "Name, Email, and Password are required", http.StatusBadRequest)
+		return
+	}
+
+	// Check if the email is already registered.
+	for _, existingUser := range users {
+		if existingUser.Email == user.Email {
+			http.Error(w, "Email is already registered", http.StatusConflict)
 			return
 		}
 	}
-	http.NotFound(w, r)
-}
 
-func CreateUser(w http.ResponseWriter, r *http.Request) {
-	var user User
-	_ = json.NewDecoder(r.Body).Decode(&user)
-	user.ID = "3" // This should be generated dynamically
+	// Add the new user (ID generation for simplicity).
+	user.ID = generateUniqueID()
 	users = append(users, user)
+
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(user)
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(map[string]string{"message": "User registered successfully", "user_id": user.ID})
 }
 
-func UpdateUser(w http.ResponseWriter, r *http.Request) {
-	params := mux.Vars(r)
-	for index, user := range users {
-		if user.ID == params["id"] {
-			users = append(users[:index], users[index+1:]...)
-			var updatedUser User
-			_ = json.NewDecoder(r.Body).Decode(&updatedUser)
-			updatedUser.ID = params["id"]
-			users = append(users, updatedUser)
+// LoginHandler logs in a user and issues a mock token.
+func (h *UserHandler) LoginHandler(w http.ResponseWriter, r *http.Request) {
+	var credentials struct {
+		Email    string `json:"email"`
+		Password string `json:"password"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&credentials); err != nil {
+		http.Error(w, "Invalid request payload", http.StatusBadRequest)
+		return
+	}
+
+	// Validate credentials.
+	for _, user := range users {
+		if user.Email == credentials.Email && user.Password == credentials.Password {
+			// Issue a mock token (in production, use JWT or other token systems).
+			token := "mockToken123" // Replace with a real token generation logic.
 			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(updatedUser)
+			json.NewEncoder(w).Encode(map[string]string{"message": "Login successful", "token": token})
 			return
 		}
 	}
-	http.NotFound(w, r)
+
+	http.Error(w, "Invalid email or password", http.StatusUnauthorized)
 }
 
-func DeleteUser(w http.ResponseWriter, r *http.Request) {
-	params := mux.Vars(r)
-	for index, user := range users {
-		if user.ID == params["id"] {
-			users = append(users[:index], users[index+1:]...)
-			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(users)
-			return
-		}
-	}
-	http.NotFound(w, r)
+// LogoutHandler handles user logout.
+func (h *UserHandler) LogoutHandler(w http.ResponseWriter, r *http.Request) {
+	// Simulate token invalidation (implementation depends on your token system).
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{"message": "Logout successful"})
 }
 
-func RegisterUserHandlers(router *mux.Router) {
-	router.HandleFunc("/users", GetUsers).Methods("GET")
-	router.HandleFunc("/users/{id}", GetUser).Methods("GET")
-	router.HandleFunc("/users", CreateUser).Methods("POST")
-	router.HandleFunc("/users/{id}", UpdateUser).Methods("PUT")
-	router.HandleFunc("/users/{id}", DeleteUser).Methods("DELETE")
+// generateUniqueID generates a mock unique ID for users.
+func generateUniqueID() string {
+	return string(len(users) + 1) // This is a mock implementation.
 }

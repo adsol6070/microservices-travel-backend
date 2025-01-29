@@ -26,7 +26,8 @@ RUN apk --no-cache add ca-certificates
 COPY --from=builder /go/bin/flight-booking-service /usr/local/bin/flight-booking-service
 
 # Copy the configuration files correctly
-COPY ./config/env/dev/flight-booking.yaml /usr/local/bin/config/env/dev/flight-booking.yaml
+COPY ./config/flight-booking /usr/local/bin/config/flight-booking
+COPY ./config/shared /usr/local/bin/config/shared
 
 # Expose the port the service will run on
 EXPOSE 9090

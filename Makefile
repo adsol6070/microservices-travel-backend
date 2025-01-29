@@ -1,8 +1,7 @@
 # Project specific variables
 KUBECTL = kubectl
 MINIKUBE = minikube
-HELM = helm
-MIGRATION_TOOL = migrate
+MIGRATION_TOOL = bin/migrate
 MIGRATION_DIR = migrations
 SERVICE_NAME1 = hotel-booking
 SERVICE_NAME2 = flight-booking
@@ -13,12 +12,21 @@ SERVICE_NAME1_SERVICE = deployments/kubernetes/$(SERVICE_NAME1)/service.yaml
 SERVICE_NAME2_DEPLOYMENT = deployments/kubernetes/$(SERVICE_NAME2)/deployment.yaml
 SERVICE_NAME2_SERVICE = deployments/kubernetes/$(SERVICE_NAME2)/service.yaml
 
-# Helm chart paths
-SERVICE_NAME1_HELM = deployments/helm/$(SERVICE_NAME1)
-SERVICE_NAME2_HELM = deployments/helm/$(SERVICE_NAME2)
-
-# Docker Compose path for local development
+# Docker Compose path for local and production development
 DOCKER_COMPOSE = deployments/docker-compose.yaml
+DOCKER_COMPOSE_OVERRIDE = deployments/docker-compose.override.yaml
+DOCKER_COMPOSE_PROD = deployments/docker-compose.prod.yaml
+
+# Exporting bin folder to the path for Makefile
+export PATH   := $(PWD)/bin:$(PATH)
+export SHELL  := bash
+export OSTYPE := $(shell uname -s | tr A-Z a-z)
+export ARCH := $(shell uname -m)
+
+# --- Tools & Variables ---
+include ./misc/make/tools.Makefile
+
+deps: $(MIGRATE) $(AIR)
 
 # Default target
 all: start
@@ -31,7 +39,7 @@ start: ## Start Kubernetes Cluster (Minikube or Kind)
 deploy-all: deploy-secrets deploy-$(SERVICE_NAME1) deploy-$(SERVICE_NAME2)
 
 deploy-secrets: ## Apply secrets
-	$(KUBECTL) apply -f deployments/secrets/database-secret.yaml
+	$(KUBECTL) apply -f deployments/kubernetes/shared/shared-secret.yaml
 
 deploy-$(SERVICE_NAME1): ## Deploy service-name1
 	$(KUBECTL) apply -f $(SERVICE_NAME1_DEPLOYMENT)
@@ -40,15 +48,6 @@ deploy-$(SERVICE_NAME1): ## Deploy service-name1
 deploy-$(SERVICE_NAME2): ## Deploy service-name2
 	$(KUBECTL) apply -f $(SERVICE_NAME2_DEPLOYMENT)
 	$(KUBECTL) apply -f $(SERVICE_NAME2_SERVICE)
-
-## Deploy all services using Helm (Optional)
-deploy-helm-all: deploy-helm-$(SERVICE_NAME1) deploy-helm-$(SERVICE_NAME2)
-
-deploy-helm-$(SERVICE_NAME1): ## Deploy service-name1 using Helm
-	$(HELM) install $(SERVICE_NAME1) $(SERVICE_NAME1_HELM)
-
-deploy-helm-$(SERVICE_NAME2): ## Deploy service-name2 using Helm
-	$(HELM) install $(SERVICE_NAME2) $(SERVICE_NAME2_HELM)
 
 ## Expose services using kubectl port-forward
 forward-$(SERVICE_NAME1): ## Forward service-name1 port
@@ -64,21 +63,23 @@ clean: ## Clean up all Kubernetes resources
 	$(KUBECTL) delete -f $(SERVICE_NAME2_DEPLOYMENT) --ignore-not-found
 	$(KUBECTL) delete -f $(SERVICE_NAME2_SERVICE) --ignore-not-found
 
-## Clean up Helm releases (Optional)
-clean-helm: ## Clean up Helm releases
-	$(HELM) uninstall $(SERVICE_NAME1)
-	$(HELM) uninstall $(SERVICE_NAME2)
-
 ## Stop the local Kubernetes cluster
 stop: ## Stop the Kubernetes cluster (Minikube or Kind)
 	$(MINIKUBE) stop
 
 ## Run Docker Compose (for local testing)
 docker-compose-up: ## Start local services using Docker Compose
-	docker-compose -f $(DOCKER_COMPOSE) up -d
+	docker-compose -f $(DOCKER_COMPOSE) -f $(DOCKER_COMPOSE_OVERRIDE) up -d
 
 docker-compose-down: ## Stop services using Docker Compose
-	docker-compose -f $(DOCKER_COMPOSE) down
+	docker-compose -f $(DOCKER_COMPOSE) -f $(DOCKER_COMPOSE_OVERRIDE) down	
+
+## Run Docker Compose for production
+docker-compose-prod-up: ## Start production services using Docker Compose
+	docker-compose -f $(DOCKER_COMPOSE) -f $(DOCKER_COMPOSE_PROD) up -d
+
+docker-compose-prod-down: ## Stop production services using Docker Compose
+	docker-compose -f $(DOCKER_COMPOSE) -f $(DOCKER_COMPOSE_PROD) down
 
 ## Migrations
 
@@ -92,7 +93,7 @@ migrate-hotel: ## Run migration for the hotel-booking service
 	$(MIGRATION_TOOL) -path=$(MIGRATION_DIR_HOTEL) -database $(DATABASE_URL) up
 
 # Run a migration for the flight-booking service with a filename argument
-migrate-flight: ## Run migration for the flight-booking service
+migrate-flight: ## Run migration for flight-booking
 	@echo "Running migration for flight-booking"
 	$(MIGRATION_TOOL) -path=$(MIGRATION_DIR_FLIGHT) -database $(DATABASE_URL) up
 
@@ -102,24 +103,28 @@ migrate-hotel-down: ## Revert migration for the hotel-booking service
 	$(MIGRATION_TOOL) -path=$(MIGRATION_DIR_HOTEL) -database $(DATABASE_URL) down
 
 # Revert a migration for the flight-booking service with a filename argument
-migrate-flight-down: ## Revert migration for the flight-booking service
+migrate-flight-down: ## Revert migration for flight-booking
 	@echo "Reverting migration for flight-booking"
 	$(MIGRATION_TOOL) -path=$(MIGRATION_DIR_FLIGHT) -database $(DATABASE_URL) down
 
 ## Generate a migration file (up and down) for hotel-booking
 generate-migration-hotel: ## Generate a migration for hotel-booking
-	@echo "Generating migration for hotel-booking"
-	$(MIGRATION_TOOL) create -ext sql -dir $(MIGRATION_DIR_HOTEL) -seq $(MIGRATION_NAME)
+	@read -p "Enter migration name: " MIGRATION_NAME; \
+	echo "Generating migration for hotel-booking"; \
+	mkdir -p $(MIGRATION_DIR_HOTEL); \
+	$(MIGRATION_TOOL) create -ext sql -dir $(MIGRATION_DIR_HOTEL) -seq $$MIGRATION_NAME
 
 ## Generate a migration file (up and down) for flight-booking
 generate-migration-flight: ## Generate a migration for flight-booking
-	@echo "Generating migration for flight-booking"
-	$(MIGRATION_TOOL) create -ext sql -dir $(MIGRATION_DIR_FLIGHT) -seq $(MIGRATION_NAME)
+	@read -p "Enter migration name: " MIGRATION_NAME; \
+	echo "Generating migration for flight-booking"; \
+	mkdir -p $(MIGRATION_DIR_FLIGHT); \
+	$(MIGRATION_TOOL) create -ext sql -dir $(MIGRATION_DIR_FLIGHT) -seq $$MIGRATION_NAME
 
 # The user should provide the name of the migration when running these commands:
 # Example: make generate-migration-hotel MIGRATION_NAME=create_hotels_table
 
-.PHONY: all start deploy-all deploy-$(SERVICE_NAME1) deploy-$(SERVICE_NAME2) deploy-helm-all \
-    deploy-helm-$(SERVICE_NAME1) deploy-helm-$(SERVICE_NAME2) forward-$(SERVICE_NAME1) \
-    forward-$(SERVICE_NAME2) clean clean-helm stop docker-compose-up docker-compose-down \
-    migrate-hotel migrate-flight migrate-hotel-down migrate-flight-down generate-migration-hotel generate-migration-flight
+.PHONY: all start deploy-all deploy-$(SERVICE_NAME1) deploy-$(SERVICE_NAME2) \
+    forward-$(SERVICE_NAME1) forward-$(SERVICE_NAME2) clean stop docker-compose-up docker-compose-down \
+    docker-compose-prod-up docker-compose-prod-down migrate-hotel migrate-flight migrate-hotel-down migrate-flight-down \
+    generate-migration-hotel generate-migration-flight

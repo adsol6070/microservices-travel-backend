@@ -4,26 +4,16 @@ services:
       context: ../
       dockerfile: build/docker/hotel.Dockerfile
     container_name: hotel-booking
-    ports:
-      - "5000:5000"
     networks:
       - service-network
-    env_file:
-      - config/shared/dev.env
-      - config/hotel-booking/dev.env
 
   flight-booking:
     build:
       context: ../
       dockerfile: build/docker/flight.Dockerfile
     container_name: flight-booking
-    ports:
-      - "9090:9090"
     networks:
       - service-network
-    env_file:
-      - config/shared/dev.env
-      - config/flight-booking/dev.env
 
 networks:
   service-network:

@@ -1,0 +1,22 @@
+services:
+  hotel-booking:
+    ports:
+      - "5000:5000"
+    env_file:
+      - ../config/shared/prod.env
+      - ../config/hotel-booking/prod.env
+    deploy:
+      replicas: 3 # Scale up in production
+      restart_policy:
+        condition: on-failure
+
+  flight-booking:
+    ports:
+      - "9090:9090"
+    env_file:
+      - ../config/shared/prod.env
+      - ../config/flight-booking/prod.env
+    deploy:
+      replicas: 3
+      restart_policy:
+        condition: on-failure

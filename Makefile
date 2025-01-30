@@ -5,12 +5,17 @@ MIGRATION_TOOL = bin/migrate
 MIGRATION_DIR = migrations
 SERVICE_NAME1 = hotel-booking
 SERVICE_NAME2 = flight-booking
+SERVICE_NAME3 = user-service
+# DATABASE_URL = "postgres://postgres:royal-dusk-20@travel-db.cd2uyuqoiqtz.ap-south-1.rds.amazonaws.com:5432"
+DATABASE_URL = "postgres://postgres:admin@localhost:5432/traveltest"
 
 # Kubernetes manifests paths
 SERVICE_NAME1_DEPLOYMENT = deployments/kubernetes/$(SERVICE_NAME1)/deployment.yaml
 SERVICE_NAME1_SERVICE = deployments/kubernetes/$(SERVICE_NAME1)/service.yaml
 SERVICE_NAME2_DEPLOYMENT = deployments/kubernetes/$(SERVICE_NAME2)/deployment.yaml
 SERVICE_NAME2_SERVICE = deployments/kubernetes/$(SERVICE_NAME2)/service.yaml
+SERVICE_NAME3_DEPLOYMENT = deployments/kubernetes/$(SERVICE_NAME3)/deployment.yaml
+SERVICE_NAME3_SERVICE = deployments/kubernetes/$(SERVICE_NAME3)/service.yaml
 
 # Docker Compose path for local and production development
 DOCKER_COMPOSE = deployments/docker-compose.yaml
@@ -36,7 +41,7 @@ start: ## Start Kubernetes Cluster (Minikube or Kind)
 	$(MINIKUBE) start
 
 ## Deploy all services using kubectl
-deploy-all: deploy-secrets deploy-$(SERVICE_NAME1) deploy-$(SERVICE_NAME2)
+deploy-all: deploy-secrets deploy-$(SERVICE_NAME1) deploy-$(SERVICE_NAME2) deploy-$(SERVICE_NAME3)
 
 deploy-secrets: ## Apply secrets
 	$(KUBECTL) apply -f deployments/kubernetes/shared/shared-secret.yaml
@@ -49,6 +54,10 @@ deploy-$(SERVICE_NAME2): ## Deploy service-name2
 	$(KUBECTL) apply -f $(SERVICE_NAME2_DEPLOYMENT)
 	$(KUBECTL) apply -f $(SERVICE_NAME2_SERVICE)
 
+deploy-$(SERVICE_NAME3): ## Deploy service-name2
+	$(KUBECTL) apply -f $(SERVICE_NAME3_DEPLOYMENT)
+	$(KUBECTL) apply -f $(SERVICE_NAME3_SERVICE)
+
 ## Expose services using kubectl port-forward
 forward-$(SERVICE_NAME1): ## Forward service-name1 port
 	$(KUBECTL) port-forward service/$(SERVICE_NAME1) 5000:5000
@@ -56,12 +65,17 @@ forward-$(SERVICE_NAME1): ## Forward service-name1 port
 forward-$(SERVICE_NAME2): ## Forward service-name2 port
 	$(KUBECTL) port-forward service/$(SERVICE_NAME2) 9090:9090
 
+forward-$(SERVICE_NAME3): ## Forward service-name2 port
+	$(KUBECTL) port-forward service/$(SERVICE_NAME2) 5001:5001
+
 ## Clean up Kubernetes resources
 clean: ## Clean up all Kubernetes resources
 	$(KUBECTL) delete -f $(SERVICE_NAME1_DEPLOYMENT) --ignore-not-found
 	$(KUBECTL) delete -f $(SERVICE_NAME1_SERVICE) --ignore-not-found
 	$(KUBECTL) delete -f $(SERVICE_NAME2_DEPLOYMENT) --ignore-not-found
 	$(KUBECTL) delete -f $(SERVICE_NAME2_SERVICE) --ignore-not-found
+	$(KUBECTL) delete -f $(SERVICE_NAME3_DEPLOYMENT) --ignore-not-found
+	$(KUBECTL) delete -f $(SERVICE_NAME3_SERVICE) --ignore-not-found
 
 ## Stop the local Kubernetes cluster
 stop: ## Stop the Kubernetes cluster (Minikube or Kind)
@@ -86,6 +100,7 @@ docker-compose-prod-down: ## Stop production services using Docker Compose
 # Migration base command setup
 MIGRATION_DIR_FLIGHT = $(MIGRATION_DIR)/flight-booking
 MIGRATION_DIR_HOTEL = $(MIGRATION_DIR)/hotel-booking
+MIGRATION_DIR_USER = $(MIGRATION_DIR)/user-service
 
 # Run a migration for the hotel-booking service with a filename argument
 migrate-hotel: ## Run migration for the hotel-booking service
@@ -97,6 +112,11 @@ migrate-flight: ## Run migration for flight-booking
 	@echo "Running migration for flight-booking"
 	$(MIGRATION_TOOL) -path=$(MIGRATION_DIR_FLIGHT) -database $(DATABASE_URL) up
 
+# Run a migration for the user service with a filename argument
+migrate-user: ## Run migration for the user service
+	@echo "Running migration for user-service"
+	$(MIGRATION_TOOL) -path=$(MIGRATION_DIR_USER) -database $(DATABASE_URL) up
+
 # Revert a migration for the hotel-booking service with a filename argument
 migrate-hotel-down: ## Revert migration for the hotel-booking service
 	@echo "Reverting migration for hotel-booking"
@@ -106,6 +126,11 @@ migrate-hotel-down: ## Revert migration for the hotel-booking service
 migrate-flight-down: ## Revert migration for flight-booking
 	@echo "Reverting migration for flight-booking"
 	$(MIGRATION_TOOL) -path=$(MIGRATION_DIR_FLIGHT) -database $(DATABASE_URL) down
+
+# Revert a migration for the user service with a filename argument
+migrate-user-down: ## Revert migration for the user service
+	@echo "Reverting migration for user-service"
+	$(MIGRATION_TOOL) -path=$(MIGRATION_DIR_USER) -database $(DATABASE_URL) down
 
 ## Generate a migration file (up and down) for hotel-booking
 generate-migration-hotel: ## Generate a migration for hotel-booking
@@ -120,6 +145,13 @@ generate-migration-flight: ## Generate a migration for flight-booking
 	echo "Generating migration for flight-booking"; \
 	mkdir -p $(MIGRATION_DIR_FLIGHT); \
 	$(MIGRATION_TOOL) create -ext sql -dir $(MIGRATION_DIR_FLIGHT) -seq $$MIGRATION_NAME
+
+## Generate a migration file (up and down) for flight-booking
+generate-migration-user: ## Generate a migration for flight-booking
+	@read -p "Enter migration name: " MIGRATION_NAME; \
+	echo "Generating migration for user-service"; \
+	mkdir -p $(MIGRATION_DIR_USER); \
+	$(MIGRATION_TOOL) create -ext sql -dir $(MIGRATION_DIR_USER) -seq $$MIGRATION_NAME
 
 # The user should provide the name of the migration when running these commands:
 # Example: make generate-migration-hotel MIGRATION_NAME=create_hotels_table

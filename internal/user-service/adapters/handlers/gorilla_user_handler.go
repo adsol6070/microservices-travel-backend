@@ -4,9 +4,11 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/gorilla/mux"
 	"microservices-travel-backend/internal/user-service/domain/models"
 	"microservices-travel-backend/internal/user-service/domain/ports"
+	
+	"github.com/google/uuid"
+	"github.com/gorilla/mux"
 )
 
 type UserHandler struct {
@@ -32,6 +34,7 @@ func (h *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "invalid request payload", http.StatusBadRequest)
 		return
 	}
+	user.ID = uuid.New().String();
 
 	createdUser, err := h.userService.CreateUser(user)
 	if err != nil {

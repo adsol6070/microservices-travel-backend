@@ -10,8 +10,15 @@ COPY go.mod go.sum ./
 # Download dependencies
 RUN go mod download
 
-# Install Air for hot reloading
-RUN go install github.com/air-verse/air@latest
+# Install required system packages (curl, bash, git)
+RUN apk add --no-cache curl bash git make
+
+# Copy the Makefile into the container
+COPY Makefile ./
+COPY misc/make /user-service/misc/make
+
+# Install tools (migrate, air) using the Makefile
+RUN make deps
 
 # Copy the entire source code
 COPY  .air.toml /user-service/.air.toml
@@ -28,4 +35,4 @@ RUN sed -i 's/\$SERVICE_NAME/user-service/' /user-service/.air.toml
 EXPOSE 5001
 
 # Run Air for hot reloading
-CMD ["air", "-c", "/user-service/.air.toml"]
+CMD ["bin/air", "-c", "/user-service/.air.toml"]

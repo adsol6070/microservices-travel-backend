@@ -10,8 +10,15 @@ COPY go.mod go.sum ./
 # Download dependencies
 RUN go mod download
 
-# Install Air for hot reloading
-RUN go install github.com/air-verse/air@latest
+# Install required system packages (curl, bash, git)
+RUN apk add --no-cache curl bash git make
+
+# Copy the Makefile into the container
+COPY Makefile ./
+COPY misc/make /flight-booking-service/misc/make
+
+# Install tools (migrate, air) using the Makefile
+RUN make deps
 
 # Copy the entire source code
 COPY  .air.toml /flight-booking-service/.air.toml
@@ -28,4 +35,4 @@ RUN sed -i 's/\$SERVICE_NAME/flight-booking-service/' /flight-booking-service/.a
 EXPOSE 9090
 
 # Run Air for hot reloading
-CMD ["air", "-c", "/flight-booking-service/.air.toml"]
+CMD ["bin/air", "-c", "/flight-booking-service/.air.toml"]

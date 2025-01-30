@@ -31,7 +31,7 @@ start: ## Start Kubernetes Cluster (Minikube or Kind)
 deploy-all: deploy-secrets deploy-$(SERVICE_NAME1) deploy-$(SERVICE_NAME2)
 
 deploy-secrets: ## Apply secrets
-	$(KUBECTL) apply -f deployments/secrets/database-secret.yaml
+	$(KUBECTL) apply -f deployments/kubernetes/shared/shared-secret.yaml
 
 deploy-$(SERVICE_NAME1): ## Deploy service-name1
 	$(KUBECTL) apply -f $(SERVICE_NAME1_DEPLOYMENT)

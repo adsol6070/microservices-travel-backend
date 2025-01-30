@@ -26,7 +26,8 @@ RUN apk --no-cache add ca-certificates
 COPY --from=builder /go/bin/hotel-booking-service /usr/local/bin/hotel-booking-service
 
 # Copy the configuration files correctly
-COPY ./config/env/dev/hotel-booking.yaml /usr/local/bin/config/env/dev/hotel-booking.yaml
+COPY ./config/hotel-booking /usr/local/bin/config/hotel-booking
+COPY ./config/shared /usr/local/bin/config/shared
 
 # Expose the port the service will run on
 EXPOSE 5000

@@ -9,8 +9,8 @@ services:
     networks:
       - service-network
     env_file:
-      - config/shared/dev.env
-      - config/hotel-booking/dev.env
+      - ../config/shared/dev.env
+      - ../config/hotel-booking/dev.env
 
   flight-booking:
     build:
@@ -22,8 +22,8 @@ services:
     networks:
       - service-network
     env_file:
-      - config/shared/dev.env
-      - config/flight-booking/dev.env
+      - ../config/shared/dev.env
+      - ../config/flight-booking/dev.env
 
 networks:
   service-network:

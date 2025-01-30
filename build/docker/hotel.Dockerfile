@@ -1,36 +1,38 @@
-# Use the official Golang image to build the Go app
-FROM golang:1.23-alpine AS builder
+# Use the official Golang image to build the Go hotel-booking-service
+FROM golang:1.23-alpine
 
 # Set the working directory inside the container
-WORKDIR /app
+WORKDIR /hotel-booking-service
 
-# Copy the Go modules manifests
+# Copy go.mod and go.sum first (to cache dependencies)
 COPY go.mod go.sum ./
 
-# Download Go modules
+# Download dependencies
 RUN go mod download
 
-# Copy the source code
-COPY . .
+# Install required system packages (curl, bash, git)
+RUN apk add --no-cache curl bash git make
 
-# Build the Go app
-RUN GOOS=linux GOARCH=amd64 go build -o /go/bin/hotel-booking-service ./cmd/hotel-booking-service
+# Copy the Makefile into the container
+COPY Makefile ./
+COPY misc/make /hotel-booking-service/misc/make
 
-# Start a new stage from a smaller image to run the service
-FROM alpine:latest  
+# Install tools (migrate, air) using the Makefile
+RUN make deps
 
-# Install CA certificates to avoid SSL issues
-RUN apk --no-cache add ca-certificates
+# Copy the entire source code
+COPY  .air.toml /hotel-booking-service/.air.toml
+COPY  cmd/hotel-booking-service /hotel-booking-service/cmd/hotel-booking-service
+COPY  config/hotel-booking /hotel-booking-service/config/hotel-booking
+COPY  config/shared /hotel-booking-service/config/shared
+COPY  internal/hotel-booking /hotel-booking-service/internal/hotel-booking
+COPY  pkg/middlewares /hotel-booking-service/pkg/middlewares
 
-# Copy the pre-built binary from the previous stage
-COPY --from=builder /go/bin/hotel-booking-service /usr/local/bin/hotel-booking-service
+# Inject service name into the .air.toml file dynamically
+RUN sed -i 's/\$SERVICE_NAME/hotel-booking-service/' /hotel-booking-service/.air.toml
 
-# Copy the configuration files correctly
-COPY ./config/hotel-booking /usr/local/bin/config/hotel-booking
-COPY ./config/shared /usr/local/bin/config/shared
-
-# Expose the port the service will run on
+# Expose the port the service listens on
 EXPOSE 5000
 
-# Command to run the executable
-CMD ["/usr/local/bin/hotel-booking-service"]
+# Run Air for hot reloading
+CMD ["bin/air", "-c", "/hotel-booking-service/.air.toml"]

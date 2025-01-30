@@ -12,3 +12,10 @@ services:
     env_file:
       - ../config/shared/dev.env
       - ../config/flight-booking/dev.env
+
+  user-service:
+    ports:
+      - "5001:5001"
+    env_file:
+      - ../config/shared/dev.env
+      - ../config/user-service/dev.env  

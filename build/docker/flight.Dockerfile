@@ -1,36 +1,31 @@
-# Use the official Golang image to build the Go app
-FROM golang:1.23-alpine AS builder
+# Use the official Golang image to build the Go flight-booking-service
+FROM golang:1.23-alpine
 
 # Set the working directory inside the container
-WORKDIR /app
+WORKDIR /flight-booking-service
 
-# Copy the Go modules manifests
+# Copy go.mod and go.sum first (to cache dependencies)
 COPY go.mod go.sum ./
 
-# Download Go modules
+# Download dependencies
 RUN go mod download
 
-# Copy the source code into the container
-COPY . .
+# Install Air for hot reloading
+RUN go install github.com/air-verse/air@latest
 
-# Build the Go app
-RUN GOOS=linux GOARCH=amd64 go build -o /go/bin/flight-booking-service ./cmd/flight-booking-service
+# Copy the entire source code
+COPY  .air.toml /flight-booking-service/.air.toml
+COPY  cmd/flight-booking-service /flight-booking-service/cmd/flight-booking-service
+COPY  config/flight-booking /flight-booking-service/config/flight-booking
+COPY  config/shared /flight-booking-service/config/shared
+COPY  internal/flight-booking /flight-booking-service/internal/flight-booking
+COPY  pkg/middlewares /flight-booking-service/pkg/middlewares
 
-# Start a new stage from a smaller image to run the service
-FROM alpine:latest  
+# Inject service name into the .air.toml file dynamically
+RUN sed -i 's/\$SERVICE_NAME/flight-booking-service/' /flight-booking-service/.air.toml
 
-# Install CA certificates to avoid SSL issues
-RUN apk --no-cache add ca-certificates
-
-# Copy the pre-built binary from the previous stage
-COPY --from=builder /go/bin/flight-booking-service /usr/local/bin/flight-booking-service
-
-# Copy the configuration files correctly
-COPY ./config/flight-booking /usr/local/bin/config/flight-booking
-COPY ./config/shared /usr/local/bin/config/shared
-
-# Expose the port the service will run on
+# Expose the port the service listens on
 EXPOSE 9090
 
-# Command to run the executable
-CMD ["/usr/local/bin/flight-booking-service"]
+# Run Air for hot reloading
+CMD ["air", "-c", "/flight-booking-service/.air.toml"]

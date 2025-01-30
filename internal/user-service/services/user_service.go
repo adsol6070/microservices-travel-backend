@@ -4,17 +4,31 @@ import (
 	"errors"
 	"microservices-travel-backend/internal/user-service/domain/models"
 	"microservices-travel-backend/internal/user-service/domain/ports"
+	"time"
+
+	"github.com/golang-jwt/jwt/v4"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type UserService struct {
 	userRepo ports.UserRepositoryPort
 }
 
+var jwtKey = []byte("secret-key")
+
 func NewUserService(userRepo ports.UserRepositoryPort) *UserService {
 	return &UserService{userRepo: userRepo}
 }
 
 func (s *UserService) CreateUser(user models.User) (*models.User, error) {
+	// Hash the password before storing it
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
+	if err != nil {
+		return nil, errors.New("failed to hash password")
+	}
+
+	// Replace the plain password with the hashed one
+	user.Password = string(hashedPassword)
 	createdUser, err := s.userRepo.Create(user)
 	if err != nil {
 		return nil, err
@@ -30,13 +44,25 @@ func (s *UserService) Login(creds models.Credentials) (string, error) {
 	}
 
 	// Validate password (in practice, compare hashed passwords)
-	if user.Password != creds.Password {
+	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(creds.Password))
+	if err != nil {
 		return "", errors.New("invalid credentials")
 	}
 
-	// Generate token (for simplicity, returning a dummy token here)
-	token := "dummy-jwt-token" // You can use JWT library to generate a proper token
-	return token, nil
+	claims := &jwt.RegisteredClaims{
+		Subject:   user.ID,
+		Issuer:    "royal-dusk",
+		ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)),
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+
+	signedToken, err := token.SignedString(jwtKey)
+	if err != nil {
+		return "", err
+	}
+
+	return signedToken, nil
 }
 
 func (s *UserService) GetUserByID(id string) (*models.User, error) {

@@ -1,0 +1,23 @@
+# Root directory of the project
+root = "."
+
+# Command to build the Go binary dynamically for each service
+cmd = "go build -o /tmp/{SERVICE_NAME} ./cmd/{SERVICE_NAME}"
+
+# Command to run the binary after building
+bin = "/tmp/{SERVICE_NAME}"
+
+# Watch directories and file extensions for changes
+[watcher]
+  paths = ["."]
+  extensions = [".go"]
+  ignore = ["vendor", "node_modules", "logs", "tmp", "migrations", "deployments", "api"]
+
+# Logging settings
+[log]
+  time = true
+  level = "info"
+
+# Debugging mode
+[debug]
+  enabled = true

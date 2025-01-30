@@ -9,6 +9,7 @@ import (
 	"microservices-travel-backend/internal/hotel-booking/domain/ports"
 	"microservices-travel-backend/internal/hotel-booking/services"
 	"net/http"
+	"os"
 
 	"github.com/gorilla/mux"
 )
@@ -35,7 +36,9 @@ func main() {
 	hotelHandler.RegisterRoutes(router)
 
 	port := ":5000"
-	log.Printf("Starting hotel-booking service on port %s...", port)
+	baseURL := os.Getenv("HOTEL_API_BASE_URL")
+	log.Printf("Starting Hotel Booking Service on port %s with base URL: %s", port, baseURL)
+
 	err = http.ListenAndServe(port, router)
 	if err != nil {
 		log.Fatalf("Failed to start server: %v", err)

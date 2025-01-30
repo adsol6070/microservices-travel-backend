@@ -6,6 +6,7 @@ import (
 	"microservices-travel-backend/internal/user-service/domain/models"
 	"os"
 
+	"github.com/google/uuid"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
@@ -35,6 +36,9 @@ func NewPostgreSQLUserRepository() (*PostgreSQLUserRepository, error) {
 
 // Create creates a new user in the database using GORM
 func (repo *PostgreSQLUserRepository) Create(user models.User) (*models.User, error) {
+	if user.ID == "" {
+		user.ID = uuid.New().String() 
+	}
 	if err := repo.db.Create(&user).Error; err != nil {
 		return nil, err
 	}

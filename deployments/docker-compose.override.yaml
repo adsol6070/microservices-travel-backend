@@ -1,0 +1,21 @@
+services:
+  hotel-booking:
+    ports:
+      - "5000:5000"
+    env_file:
+      - ../config/shared/dev.env
+      - ../config/hotel-booking/dev.env
+
+  flight-booking:
+    ports:
+      - "9090:9090"
+    env_file:
+      - ../config/shared/dev.env
+      - ../config/flight-booking/dev.env
+  
+  user-service:
+    ports:
+      - "5001:5001"
+    env_file:
+      - ../config/shared/dev.env
+      - ../config/user-service/dev.env

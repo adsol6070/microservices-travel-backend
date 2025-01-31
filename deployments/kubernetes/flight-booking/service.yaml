@@ -7,6 +7,6 @@ spec:
     app: flight-booking
   ports:
     - protocol: TCP
-      port: 9090
-      targetPort: 9090
+      port: 6100
+      targetPort: 6100
   type: ClusterIP

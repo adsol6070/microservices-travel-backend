@@ -19,9 +19,18 @@ func NewPostgresRepository() (*PostgresBookingRepository, error) {
 	databaseUsername := os.Getenv("DATABASE_USERNAME")
 	databasePassword := os.Getenv("DATABASE_PASSWORD")
 	databasePort := os.Getenv("DATABASE_PORT")
+	databaseName := os.Getenv("DATABASE_NAME")
+	sslMode := os.Getenv("DATABASE_SSLMODE")
 
-	dsn := fmt.Sprintf("postgres://%s:%s@%s:%s/?sslmode=require",
-		databaseUsername, databasePassword, databaseURL, databasePort)
+	// If DATABASE_NAME is not provided, connect without it (to the default 'postgres' database)
+	var dsn string
+	if databaseName == "" {
+		dsn = fmt.Sprintf("postgres://%s:%s@%s:%s/?sslmode=%s",
+			databaseUsername, databasePassword, databaseURL, databasePort, sslMode)
+	} else {
+		dsn = fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=%s",
+			databaseUsername, databasePassword, databaseURL, databasePort, databaseName, sslMode)
+	}
 
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {

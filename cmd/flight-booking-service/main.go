@@ -25,7 +25,7 @@ func main() {
 
 	flightHandler.RegisterRoutes(router)
 
-	port := ":9090"
+	port := ":6100"
 	log.Printf("Starting hotel-booking service on port %s...", port)
 	err = http.ListenAndServe(port, router)
 	if err != nil {

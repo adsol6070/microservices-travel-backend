@@ -1,33 +1,70 @@
 services:
   hotel-booking:
+    build:
+      context: ../
+      dockerfile: build/docker/hotel.Dockerfile
+      target: prod
+    container_name: hotel-booking-service-prod
     ports:
-      - "5000:5000"
+      - "5100:5100"
     env_file:
       - ../config/shared/prod.env
       - ../config/hotel-booking/prod.env
-    deploy:
-      replicas: 3 # Scale up in production
-      restart_policy:
-        condition: on-failure
+    restart: on-failure
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5100/health"]
+      interval: 30s
+      retries: 3
 
   flight-booking:
+    build:
+      context: ../
+      dockerfile: build/docker/flight.Dockerfile
+      target: prod
+    container_name: flight-booking-service-prod
     ports:
-      - "9090:9090"
+      - "6100:6100"
     env_file:
       - ../config/shared/prod.env
       - ../config/flight-booking/prod.env
-    deploy:
-      replicas: 3
-      restart_policy:
-        condition: on-failure
+    restart: on-failure
 
   user-service:
+    build:
+      context: ../
+      dockerfile: build/docker/user.Dockerfile
+      target: prod
+    container_name: user-service-prod
     ports:
-      - "5001:5001"
+      - "7100:7100"
     env_file:
       - ../config/shared/prod.env
       - ../config/user-service/prod.env
-    deploy:
-      replicas: 3
-      restart_policy:
-        condition: on-failure      
+    restart: on-failure
+
+  pgbouncer:
+    image: edoburu/pgbouncer
+    container_name: pgbouncer-prod
+    restart: always
+    environment:
+      DB_USER: postgres
+      DB_PASSWORD: royal-dusk-20
+      DB_HOST: travel-db.cd2uyuqoiqtz.ap-south-1.rds.amazonaws.com
+      # DB_NAME: travel
+      AUTH_TYPE: scram-sha-256
+      POOL_MODE: transaction
+      MAX_CLIENT_CONN: 100
+    ports:
+      - "5432:5432"
+    networks:
+      - service-network
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: pgadmin-prod
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@company.com
+      PGADMIN_DEFAULT_PASSWORD: securepass
+    ports:
+      - "5050:80"

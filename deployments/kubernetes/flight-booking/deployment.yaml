@@ -19,7 +19,7 @@ spec:
           image: deployments-flight-booking
           imagePullPolicy: Never
           ports:
-            - containerPort: 9090
+            - containerPort: 6100
           envFrom:
             - secretRef:
                 name: database-secret
@@ -33,13 +33,13 @@ spec:
           livenessProbe:
             httpGet:
               path: /healthz
-              port: 9090
+              port: 6100
             initialDelaySeconds: 30
             periodSeconds: 10
           readinessProbe:
             httpGet:
               path: /readiness
-              port: 9090
+              port: 6100
             initialDelaySeconds: 10
             periodSeconds: 5
 ---
@@ -52,6 +52,6 @@ spec:
     app: flight-booking
   ports:
     - protocol: TCP
-      port: 9090
-      targetPort: 9090
+      port: 6100
+      targetPort: 6100
   type: ClusterIP

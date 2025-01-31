@@ -35,7 +35,7 @@ func main() {
 
 	hotelHandler.RegisterRoutes(router)
 
-	port := ":5000"
+	port := ":5100"
 	baseURL := os.Getenv("HOTEL_API_BASE_URL")
 	log.Printf("Starting Hotel Booking Service on port %s with base URL: %s", port, baseURL)
 

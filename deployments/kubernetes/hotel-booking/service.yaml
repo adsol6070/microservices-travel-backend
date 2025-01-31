@@ -7,6 +7,6 @@ spec:
     app: hotel-booking
   ports:
     - protocol: TCP
-      port: 5000
-      targetPort: 5000
+      port: 5100
+      targetPort: 5100
   type: ClusterIP

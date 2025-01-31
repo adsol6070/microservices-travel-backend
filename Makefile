@@ -60,13 +60,13 @@ deploy-$(SERVICE_NAME3): ## Deploy service-name2
 
 ## Expose services using kubectl port-forward
 forward-$(SERVICE_NAME1): ## Forward service-name1 port
-	$(KUBECTL) port-forward service/$(SERVICE_NAME1) 5000:5000
+	$(KUBECTL) port-forward service/$(SERVICE_NAME1) 5100:5100
 
 forward-$(SERVICE_NAME2): ## Forward service-name2 port
-	$(KUBECTL) port-forward service/$(SERVICE_NAME2) 9090:9090
+	$(KUBECTL) port-forward service/$(SERVICE_NAME2) 6100:6100
 
 forward-$(SERVICE_NAME3): ## Forward service-name2 port
-	$(KUBECTL) port-forward service/$(SERVICE_NAME2) 5001:5001
+	$(KUBECTL) port-forward service/$(SERVICE_NAME3) 7100:7100
 
 ## Clean up Kubernetes resources
 clean: ## Clean up all Kubernetes resources

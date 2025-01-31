@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"log"
-
 	"microservices-travel-backend/internal/user-service/domain/models"
 
 	"os"
@@ -14,12 +13,10 @@ import (
 	"gorm.io/gorm"
 )
 
-// PostgreSQLUserRepository struct holds the GORM DB connection
 type PostgreSQLUserRepository struct {
 	db *gorm.DB
 }
 
-// NewPostgreSQLUserRepository creates a new PostgreSQLUserRepository instance
 func NewPostgreSQLUserRepository() (*PostgreSQLUserRepository, error) {
 	databaseURL := os.Getenv("DATABASE_URL")
 	databaseUsername := os.Getenv("DATABASE_USERNAME")
@@ -28,15 +25,22 @@ func NewPostgreSQLUserRepository() (*PostgreSQLUserRepository, error) {
 	databaseName := os.Getenv("DATABASE_NAME")
 	sslMode := os.Getenv("DATABASE_SSLMODE")
 
-	dsn := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=%s",
-		databaseUsername, databasePassword, databaseURL, databasePort, databaseName, sslMode)
+	// If DATABASE_NAME is not provided, connect without it (to the default 'postgres' database)
+	var dsn string
+	if databaseName == "" {
+		dsn = fmt.Sprintf("postgres://%s:%s@%s:%s/?sslmode=%s",
+			databaseUsername, databasePassword, databaseURL, databasePort, sslMode)
+	} else {
+		dsn = fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=%s",
+			databaseUsername, databasePassword, databaseURL, databasePort, databaseName, sslMode)
+	}
 
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
 		return nil, fmt.Errorf("failed connect to database: %v", err)
 	}
 
-	log.Println("Connected to database")
+	log.Println("Successfully connected to the database")
 
 	return &PostgreSQLUserRepository{db: db}, nil
 }

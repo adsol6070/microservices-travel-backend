@@ -1,20 +1,88 @@
 services:
   hotel-booking:
+    build:
+      context: ../
+      dockerfile: build/docker/hotel.Dockerfile
+      target: dev
+    container_name: hotel-booking-service-dev
+    volumes:
+      - ../cmd/hotel-booking-service:/hotel-booking-service/cmd/hotel-booking-service
+      - ../config/hotel-booking:/hotel-booking-service/config/hotel-booking
+      - ../config/shared:/hotel-booking-service/config/shared
+      - ../internal/hotel-booking:/hotel-booking-service/internal/hotel-booking
+      - ../pkg/middlewares:/hotel-booking-service/pkg/middlewares
     ports:
-      - "5000:5000"
+      - "5100:5100"
+    command: ["bin/air", "-c", "/hotel-booking-service/.air.toml"]
     env_file:
       - ../config/shared/dev.env
       - ../config/hotel-booking/dev.env
 
   flight-booking:
+    build:
+      context: ../
+      dockerfile: build/docker/flight.Dockerfile
+      target: dev
+    container_name: flight-booking-service-dev
+    volumes:
+      - "../cmd/flight-booking-service:/flight-booking-service/cmd/flight-booking-service"
+      - "../config/flight-booking:/flight-booking-service/config/flight-booking"
+      - "../config/shared:/flight-booking-service/config/shared"
+      - "../internal/flight-booking:/flight-booking-service/internal/flight-booking"
+      - "../pkg/middlewares:/flight-booking-service/pkg/middlewares"
     ports:
-      - "9090:9090"
+      - "6100:6100"
+    command: ["bin/air", "-c", "/flight-booking-service/.air.toml"]
     env_file:
       - ../config/shared/dev.env
       - ../config/flight-booking/dev.env
+
   user-service:
+    build:
+      context: ../
+      dockerfile: build/docker/user.Dockerfile
+      target: dev
+    container_name: user-service-dev
+    volumes:
+      - ../cmd/user-service:/user-service/cmd/user-service
+      - ../config/user-service:/user-service/config/user-service
+      - ../config/shared:/user-service/config/shared
+      - ../internal/user-service:/user-service/internal/user-service
+      - ../pkg/middlewares:/user-service/pkg/middlewares
     ports:
-      - "5001:5001"
+      - "7100:7100"
+    command: ["bin/air", "-c", "/user-service/.air.toml"]
     env_file:
       - ../config/shared/dev.env
-      - ../config/user-service/dev.env  
+      - ../config/user-service/dev.env
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: postgres-dev
+    restart: always
+    environment:
+      POSTGRES_USER: devuser
+      POSTGRES_PASSWORD: devpassword
+      POSTGRES_DB: devdb
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata-dev:/var/lib/postgresql/data
+    networks:
+      - service-network  
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: pgadmin-dev
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@local.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5050:80"
+    depends_on:
+      - postgres
+
+volumes:
+  pgdata-dev: # Persistent volume for PostgreSQL dev environment
+

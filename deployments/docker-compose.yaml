@@ -1,80 +1,20 @@
 services:
-  user-service:
-    build:
-      context: ../
-      dockerfile: build/docker/user.Dockerfile
-    container_name: user-service
-    networks:
-      - service-network
-    volumes:
-      - ../cmd/user-service:/user-service/cmd/user-service
-      - ../config/user-service:/user-service/config/user-service
-      - ../config/shared:/user-service/config/shared
-      - ../internal/user-service:/user-service/internal/user-service
-      - ../pkg/middlewares:/user-service/pkg/middlewares
-    command: ["bin/air", "-c", "/user-service/.air.toml"]
-
   hotel-booking:
-    build:
-      context: ../
-      dockerfile: build/docker/hotel.Dockerfile
-    container_name: hotel-booking
     networks:
       - service-network
-    volumes:
-      - ../cmd/hotel-booking-service:/hotel-booking-service/cmd/hotel-booking-service
-      - ../config/hotel-booking:/hotel-booking-service/config/hotel-booking
-      - ../config/shared:/hotel-booking-service/config/shared
-      - ../internal/hotel-booking:/hotel-booking-service/internal/hotel-booking
-      - ../pkg/middlewares:/hotel-booking-service/pkg/middlewares
-    command: ["bin/air", "-c", "/hotel-booking-service/.air.toml"]
 
   flight-booking:
-    build:
-      context: ../
-      dockerfile: build/docker/flight.Dockerfile
-    container_name: flight-booking
     networks:
       - service-network
-    volumes:
-      - "../cmd/flight-booking-service:/flight-booking-service/cmd/flight-booking-service"
-      - "../config/flight-booking:/flight-booking-service/config/flight-booking"
-      - "../config/shared:/flight-booking-service/config/shared"
-      - "../internal/flight-booking:/flight-booking-service/internal/flight-booking"
-      - "../pkg/middlewares:/flight-booking-service/pkg/middlewares"
-    command: ["bin/air", "-c", "/flight-booking-service/.air.toml"]
 
-  postgres:
-    image: postgres:13
-    container_name: postgres
+  user-service:
     networks:
       - service-network
-    ports:
-      - "5432:5432"
-    environment:
-      POSTGRES_USER: travel90
-      POSTGRES_PASSWORD: travel90
-      POSTGRES_DB: traveltest
-    volumes:
-      - postgres-data:/var/lib/postgresql/data
-  
+      
   pgadmin:
-    image: dpage/pgadmin4
-    container_name: pgadmin
     networks:
       - service-network
-    ports:
-      - "5050:80"
-    environment:
-      PGADMIN_DEFAULT_EMAIL: admin@example.com
-      PGADMIN_DEFAULT_PASSWORD: admin
-    depends_on:
-      - postgres
-    restart: always
 
 networks:
   service-network:
     driver: bridge
-
-volumes:
-  postgres-data:

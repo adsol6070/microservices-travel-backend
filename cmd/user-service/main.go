@@ -24,7 +24,7 @@ func main() {
 	router := mux.NewRouter()
 	userHandler.RegisterRoutes(router)
 
-	port := ":5001"
+	port := ":7100"
 	log.Printf("Starting user service on port %s...", port)
 	if err := http.ListenAndServe(port, router); err != nil {
 		log.Fatalf("failed to start server: %v", err)

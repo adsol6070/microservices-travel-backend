@@ -19,7 +19,7 @@ spec:
           image: deployments-user-service
           imagePullPolicy: Never
           ports:
-            - containerPort: 5001
+            - containerPort: 7100
           envFrom:
             - secretRef:
                 name: shared-secret
@@ -33,13 +33,13 @@ spec:
           livenessProbe:
             httpGet:
               path: /healthz
-              port: 5001
+              port: 7100
             initialDelaySeconds: 30
             periodSeconds: 10
           readinessProbe:
             httpGet:
               path: /readiness
-              port: 5001
+              port: 7100
             initialDelaySeconds: 10
             periodSeconds: 5
 ---
@@ -52,6 +52,6 @@ spec:
     app: user-service
   ports:
     - protocol: TCP
-      port: 5001
-      targetPort: 5001
+      port: 7100
+      targetPort: 7100
   type: ClusterIP

@@ -19,7 +19,7 @@ spec:
           image: deployments-hotel-booking
           imagePullPolicy: Never
           ports:
-            - containerPort: 5000
+            - containerPort: 5100
           envFrom:
             - secretRef:
                 name: shared-secret
@@ -33,13 +33,13 @@ spec:
           livenessProbe:
             httpGet:
               path: /healthz
-              port: 5000
+              port: 5100
             initialDelaySeconds: 30
             periodSeconds: 10
           readinessProbe:
             httpGet:
               path: /readiness
-              port: 5000
+              port: 5100
             initialDelaySeconds: 10
             periodSeconds: 5
 ---
@@ -52,6 +52,6 @@ spec:
     app: hotel-booking
   ports:
     - protocol: TCP
-      port: 5000
-      targetPort: 5000
+      port: 5100
+      targetPort: 5100
   type: ClusterIP

@@ -26,6 +26,8 @@ func (h *UserHandler) RegisterRoutes(router *mux.Router) {
 	router.HandleFunc("/users", h.GetAllUsers).Methods(http.MethodGet)
 	router.HandleFunc("/users/{id}", h.UpdateUser).Methods(http.MethodPut)
 	router.HandleFunc("/users/{id}", h.DeleteUser).Methods(http.MethodDelete)
+	router.HandleFunc("/users/forgot-password", h.ForgotPassword).Methods(http.MethodPost)
+	router.HandleFunc("/users/reset-password", h.ResetPassword).Methods(http.MethodPost)
 }
 
 func (h *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
@@ -110,4 +112,40 @@ func (h *UserHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusNoContent)
+}
+
+func (h *UserHandler) ForgotPassword(w http.ResponseWriter, r *http.Request) {
+	var request models.ForgotPasswordRequest
+	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+		http.Error(w, "invalid request payload", http.StatusBadRequest)
+		return
+	}
+
+	// Call the service layer to handle password reset logic
+	err := h.userService.ForgotPassword(request.Email)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]string{"message": "Password reset link sent to email"})
+}
+
+func (h *UserHandler) ResetPassword(w http.ResponseWriter, r *http.Request) {
+	var request models.ResetPasswordRequest
+	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+		http.Error(w, "invalid request payload", http.StatusBadRequest)
+		return
+	}
+
+	// Call the service to reset the password
+	err := h.userService.ResetPassword(request.Token, request.NewPassword)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]string{"message": "Password reset successful"})
 }

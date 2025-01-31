@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"microservices-travel-backend/internal/user-service/domain/models"
+
 	"os"
 
 	"github.com/google/uuid"
@@ -36,7 +37,7 @@ func NewPostgreSQLUserRepository() (*PostgreSQLUserRepository, error) {
 
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
-		return nil, fmt.Errorf("failed to connect to database: %v", err)
+		return nil, fmt.Errorf("failed connect to database: %v", err)
 	}
 
 	log.Println("Successfully connected to the database")
@@ -47,7 +48,7 @@ func NewPostgreSQLUserRepository() (*PostgreSQLUserRepository, error) {
 // Create creates a new user in the database using GORM
 func (repo *PostgreSQLUserRepository) Create(user models.User) (*models.User, error) {
 	if user.ID == "" {
-		user.ID = uuid.New().String() 
+		user.ID = uuid.New().String()
 	}
 	if err := repo.db.Create(&user).Error; err != nil {
 		return nil, err

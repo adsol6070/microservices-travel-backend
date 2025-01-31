@@ -3,7 +3,10 @@ package repositories
 import (
 	"errors"
 	"fmt"
+	"log"
+
 	"microservices-travel-backend/internal/user-service/domain/models"
+
 	"os"
 
 	"github.com/google/uuid"
@@ -22,14 +25,18 @@ func NewPostgreSQLUserRepository() (*PostgreSQLUserRepository, error) {
 	databaseUsername := os.Getenv("DATABASE_USERNAME")
 	databasePassword := os.Getenv("DATABASE_PASSWORD")
 	databasePort := os.Getenv("DATABASE_PORT")
+	databaseName := os.Getenv("DATABASE_NAME")
+	sslMode := os.Getenv("DATABASE_SSLMODE")
 
-	dsn := fmt.Sprintf("postgres://%s:%s@%s:%s/?sslmode=require",
-		databaseUsername, databasePassword, databaseURL, databasePort)
+	dsn := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=%s",
+		databaseUsername, databasePassword, databaseURL, databasePort, databaseName, sslMode)
 
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
-		return nil, fmt.Errorf("failed to connect to database: %v", err)
+		return nil, fmt.Errorf("failed connect to database: %v", err)
 	}
+
+	log.Println("Connected to database")
 
 	return &PostgreSQLUserRepository{db: db}, nil
 }
@@ -37,7 +44,7 @@ func NewPostgreSQLUserRepository() (*PostgreSQLUserRepository, error) {
 // Create creates a new user in the database using GORM
 func (repo *PostgreSQLUserRepository) Create(user models.User) (*models.User, error) {
 	if user.ID == "" {
-		user.ID = uuid.New().String() 
+		user.ID = uuid.New().String()
 	}
 	if err := repo.db.Create(&user).Error; err != nil {
 		return nil, err

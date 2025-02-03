@@ -10,7 +10,7 @@ services:
   user-service:
     networks:
       - service-network
-      
+
   pgadmin:
     networks:
       - service-network

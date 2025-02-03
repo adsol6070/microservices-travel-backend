@@ -58,6 +58,7 @@ COPY  config/user-service /user-service/config/user-service
 COPY  config/shared /user-service/config/shared
 COPY  internal/user-service /user-service/internal/user-service
 COPY  pkg/middlewares /user-service/pkg/middlewares
+COPY  pkg/security /user-service/pkg/security
 
 # Compile the Go application
 RUN go build -o /user-service/bin/user-service ./cmd/user-service

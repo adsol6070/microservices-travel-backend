@@ -49,6 +49,7 @@ services:
       - ../config/shared:/user-service/config/shared
       - ../internal/user-service:/user-service/internal/user-service
       - ../pkg/middlewares:/user-service/pkg/middlewares
+      - ../pkg/security:/user-service/pkg/security
     ports:
       - "7100:7100"
     command: ["bin/air", "-c", "/user-service/.air.toml"]

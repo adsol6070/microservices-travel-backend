@@ -1,4 +1,4 @@
-package service
+package services
 
 import (
 	"errors"
@@ -71,52 +71,32 @@ func (s *UserService) ForgotPassword(email string) error {
 	if err != nil {
 		return errors.New("user not found")
 	}
-
 	resetToken := fmt.Sprintf("reset-token-for-%s", user.ID)
-
-	err = sendResetPasswordEmail(user.Email, resetToken)
-	if err != nil {
-		return err
-	}
-	return nil
+	return sendResetPasswordEmail(user.Email, resetToken)
 }
 
 func sendResetPasswordEmail(email, resetToken string) error {
-	// from := "no-reply@yourapp.com"
-	// password := os.Getenv("EMAIL_PASSWORD")
-	// to := []string{email}
-	// subject := "Password Reset Request"
-	// body := fmt.Sprintf("Click the link to reset your password: https://yourapp.com/reset-password?token=%s", resetToken)
-
-	// msg := "From: " + from + "\n" +
-	// 	"To: " + email + "\n" +
-	// 	"Subject: " + subject + "\n\n" +
-	// 	body
-
-	// err := smtp.SendMail("smtp.yourmailserver.com:587", smtp.PlainAuth("", from, password, "smtp.yourmailserver.com"), from, to, []byte(msg))
-	// if err != nil {
-	// 	return err
-	// }
-
+	// Mock email function (implement SMTP if needed)
+	fmt.Printf("Sending password reset email to %s with token %s\n", email, resetToken)
 	return nil
 }
 
 func (s *UserService) ResetPassword(token, newPassword string) error {
-	userID := token[len("reset-token-for-"):] // Mock logic
-
+	userID := token[len("reset-token-for-"):]
 	user, err := s.userRepo.GetByID(userID)
 	if err != nil {
 		return errors.New("user not found")
 	}
-
-	user.Password = newPassword
-
-	_, err = s.userRepo.Update(user.ID, *user)
+	
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
 	if err != nil {
-		return err
+		return errors.New("failed to hash password")
 	}
 
-	return nil
+	// Replace the plain password with the hashed one
+	user.Password = string(hashedPassword)
+	_, err = s.userRepo.Update(user.ID, *user)
+	return err
 }
 
 func (s *UserService) GetUserByID(id string) (*models.User, error) {

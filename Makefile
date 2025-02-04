@@ -6,8 +6,7 @@ MIGRATION_DIR = migrations
 SERVICE_NAME1 = hotel-booking
 SERVICE_NAME2 = flight-booking
 SERVICE_NAME3 = user-service
-# DATABASE_URL = "postgres://postgres:royal-dusk-20@travel-db.cd2uyuqoiqtz.ap-south-1.rds.amazonaws.com:5432"
-DATABASE_URL = "postgres://travel90:travel90@localhost:5432/traveltest?sslmode=disable"
+DATABASE_URL = "postgres://devuser:devpassword@localhost:5432/devdb?sslmode=disable"
 
 # Kubernetes manifests paths
 SERVICE_NAME1_DEPLOYMENT = deployments/kubernetes/$(SERVICE_NAME1)/deployment.yaml

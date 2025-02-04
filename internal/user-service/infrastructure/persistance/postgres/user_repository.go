@@ -17,11 +17,6 @@ type PostgresUserRepository struct {
 	db *gorm.DB
 }
 
-// UpdatePassword implements auth.AuthRepository.
-func (r *PostgresUserRepository) UpdatePassword(ctx context.Context, userID string, newPasswordHash string) error {
-	panic("unimplemented")
-}
-
 func NewUserRepository() (*PostgresUserRepository, error) {
 	databaseURL := os.Getenv("DATABASE_URL")
 	databaseUsername := os.Getenv("DATABASE_USERNAME")

@@ -16,7 +16,7 @@ type PostgresAuthRepository struct {
 	db *gorm.DB
 }
 
-func NewAuthRepository() (*PostgresUserRepository, error) {
+func NewAuthRepository() (*PostgresAuthRepository, error) {
 	databaseURL := os.Getenv("DATABASE_URL")
 	databaseUsername := os.Getenv("DATABASE_USERNAME")
 	databasePassword := os.Getenv("DATABASE_PASSWORD")
@@ -40,7 +40,7 @@ func NewAuthRepository() (*PostgresUserRepository, error) {
 
 	log.Println("Successfully connected to the database")
 
-	return &PostgresUserRepository{db: db}, nil
+	return &PostgresAuthRepository{db: db}, nil
 }
 
 func (r *PostgresAuthRepository) UpdatePassword(ctx context.Context, userID string, newPasswordHash string) error {

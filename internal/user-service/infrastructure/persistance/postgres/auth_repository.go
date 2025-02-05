@@ -45,14 +45,14 @@ func NewAuthRepository() (*PostgresAuthRepository, error) {
 
 func (r *PostgresAuthRepository) UpdatePassword(ctx context.Context, userID string, newPasswordHash string) error {
 	var user user.User
-	if err := r.db.First(&user, "id = ?", userID).Error; err != nil {
+	if err := r.db.WithContext(ctx).First(&user, "id = ?", userID).Error; err != nil {
 		return fmt.Errorf("user not found with ID: %s, error: %w", userID, err)
 	}
 
 	user.Password = newPasswordHash
 	user.UpdatedAt = time.Now()
 
-	if err := r.db.Save(&user).Error; err != nil {
+	if err := r.db.WithContext(ctx).Save(&user).Error; err != nil {
 		return fmt.Errorf("failed to update password for user %s: %w", userID, err)
 	}
 

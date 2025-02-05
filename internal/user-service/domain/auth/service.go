@@ -82,15 +82,10 @@ func (s *AuthService) Login(ctx context.Context, userDetails *user.User) (string
 	return token, nil
 }
 
-func (s *AuthService) ResetPassword(ctx context.Context, email, newPassword string) error {
-	s.logger.Printf("Password reset request for email: %s", email)
-
-	user, err := s.userRepo.GetByEmail(ctx, email)
+func (s *AuthService) ResetPassword(ctx context.Context, token, newPassword string) error {
+	userID := token[len("reset-token-for-"):]
+	user, err := s.userRepo.GetByID(ctx, userID)
 	if err != nil {
-		return fmt.Errorf("failed to fetch user: %w", err)
-	}
-	if user == nil {
-		s.logger.Printf("User not found for email: %s", email)
 		return errors.New("user not found")
 	}
 
@@ -115,9 +110,12 @@ func (s *AuthService) ForgotPassword(ctx context.Context, email string) error {
 	if user == nil {
 		return errors.New("user not found")
 	}
+	resetToken := fmt.Sprintf("reset-token-for-%s", user.ID)
+	return sendResetPasswordEmail(user.Email, resetToken)
+}
 
-	// In a real-world scenario, you would send an email with a reset link
-	// Mocking this for now.
-	s.logger.Printf("Password reset email sent to %s", email)
+func sendResetPasswordEmail(email, resetToken string) error {
+	// Mock email function (implement SMTP if needed)
+	fmt.Printf("Sending password reset email to %s with token %s\n", email, resetToken)
 	return nil
 }

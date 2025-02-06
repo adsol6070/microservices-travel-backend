@@ -36,7 +36,7 @@ COPY internal/email-service/services/email_service.go /email-service/internal/em
 RUN sed -i 's/\$SERVICE_NAME/email-service/' /email-service/.air.toml
 
 # Expose the port the service listens on
-EXPOSE 5200
+EXPOSE 8100
 
 # Run Air for hot reloading
 CMD ["bin/air", "-c", "/email-service/.air.toml"]
@@ -71,7 +71,7 @@ RUN chown -R appuser:appgroup /email-service
 USER appuser
 
 # Expose the application port
-EXPOSE 7200
+EXPOSE 8100
 
 # Run the compiled binary
 CMD ["/email-service/bin/email-service"]

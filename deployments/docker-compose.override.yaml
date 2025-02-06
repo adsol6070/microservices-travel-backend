@@ -71,7 +71,7 @@ services:
       - ../pkg/email:/email-service/pkg/email
       - ../pkg/middlewares:/email-service/pkg/middlewares
     ports:
-      - "5200:5200"
+      - "8100:8100"
     command: ["bin/air", "-c", "/email-service/.air.toml"]
     env_file:
       - ../config/shared/dev.env

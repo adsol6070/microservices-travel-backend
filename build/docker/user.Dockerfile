@@ -36,6 +36,7 @@ COPY  cmd/user-service /user-service/cmd/user-service
 COPY  config/user-service /user-service/config/user-service
 COPY  config/shared /user-service/config/shared
 COPY  internal/user-service /user-service/internal/user-service
+COPY  internal/shared/rabbitmq /user-service/internal/shared/rabbitmq
 COPY  pkg/middlewares /user-service/pkg/middlewares
 
 # Inject service name into the .air.toml file dynamically
@@ -57,6 +58,7 @@ COPY  cmd/user-service /user-service/cmd/user-service
 COPY  config/user-service /user-service/config/user-service
 COPY  config/shared /user-service/config/shared
 COPY  internal/user-service /user-service/internal/user-service
+COPY  internal/shared/rabbitmq /user-service/internal/shared/rabbitmq
 COPY  pkg/middlewares /user-service/pkg/middlewares
 COPY  pkg/security /user-service/pkg/security
 

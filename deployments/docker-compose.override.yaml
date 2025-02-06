@@ -48,6 +48,7 @@ services:
       - ../config/user-service:/user-service/config/user-service
       - ../config/shared:/user-service/config/shared
       - ../internal/user-service:/user-service/internal/user-service
+      - ../internal/shared/rabbitmq:/user-service/internal/shared/rabbitmq
       - ../pkg/middlewares:/user-service/pkg/middlewares
       - ../pkg/security:/user-service/pkg/security
     ports:
@@ -56,6 +57,24 @@ services:
     env_file:
       - ../config/shared/dev.env
       - ../config/user-service/dev.env
+  
+  email-service:
+    build:
+      context: ../
+      dockerfile: build/docker/email.Dockerfile
+      target: dev
+    container_name: email-service-dev
+    volumes:
+      - ../cmd/email-service:/email-service/cmd/email-service
+      - ../config/email-service:/email-service/config/email-service
+      - ../config/shared:/email-service/config/shared
+      - ../pkg/email:/email-service/pkg/email
+      - ../pkg/middlewares:/email-service/pkg/middlewares
+    ports:
+      - "5200:5200"
+    command: ["bin/air", "-c", "/email-service/.air.toml"]
+    env_file:
+      - ../config/shared/dev.env
 
   postgres:
     image: postgres:16-alpine
@@ -70,7 +89,7 @@ services:
     volumes:
       - pgdata-dev:/var/lib/postgresql/data
     networks:
-      - service-network  
+      - service-network
 
   pgadmin:
     image: dpage/pgadmin4
@@ -84,6 +103,21 @@ services:
     depends_on:
       - postgres
 
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: rabbitmq-dev
+    restart: always
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    ports:
+      - "15672:15672"
+      - "5672:5672"
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    networks:
+      - service-network
+
 volumes:
   pgdata-dev: # Persistent volume for PostgreSQL dev environment
-
+  rabbitmq-data:

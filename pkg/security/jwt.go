@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	SecretKey               = "your-secret-key"
+	SecretKey = "your-secret-key"
 	TokenExpirationDuration = time.Hour * 24 // 24 hours
 )
 

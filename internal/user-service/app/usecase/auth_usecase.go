@@ -2,22 +2,37 @@ package usecase
 
 import (
 	"context"
+	"log"
+	"microservices-travel-backend/internal/user-service/domain/email"
 	"microservices-travel-backend/internal/user-service/domain/user"
 	"microservices-travel-backend/internal/user-service/interfaces/service"
 )
 
 type AuthUsecaseImpl struct {
-	authService service.AuthService
+	authService  service.AuthService
+	emailService *email.EmailService
 }
 
-func NewAuthUsecase(authService service.AuthService) *AuthUsecaseImpl {
+func NewAuthUsecase(authService service.AuthService, emailService *email.EmailService) *AuthUsecaseImpl {
 	return &AuthUsecaseImpl{
-		authService: authService,
+		authService:  authService,
+		emailService: emailService,
 	}
 }
 
 func (u *AuthUsecaseImpl) RegisterUser(ctx context.Context, userDetails *user.User) error {
-	return u.authService.Register(ctx, userDetails)
+	err := u.authService.Register(ctx, userDetails)
+	if err != nil {
+		return err
+	}
+
+	emailMessage := []byte("Welcome " + userDetails.Name + "! You have successfully registered.")
+	err = u.emailService.SendEmail(emailMessage)
+	if err != nil {
+		log.Printf("Error sending registration email: %v", err)
+	}
+
+	return nil
 }
 
 func (u *AuthUsecaseImpl) LoginUser(ctx context.Context, userDetails *user.User) (string, error) {

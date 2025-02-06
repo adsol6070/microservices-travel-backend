@@ -41,6 +41,18 @@ services:
       - ../config/shared/prod.env
       - ../config/user-service/prod.env
     restart: on-failure
+  
+  email-service:
+    build:
+      context: ../
+      dockerfile: build/docker/email.Dockerfile
+      target: prod
+    container_name: email-service-prod
+    ports:
+      - "5200:5200"
+    env_file:
+      - ../config/shared/prod.env
+    restart: on-failure
 
   pgbouncer:
     image: edoburu/pgbouncer

@@ -57,6 +57,24 @@ services:
     env_file:
       - ../config/shared/dev.env
       - ../config/user-service/dev.env
+  
+  email-service:
+    build:
+      context: ../
+      dockerfile: build/docker/email.Dockerfile
+      target: dev
+    container_name: email-service-dev
+    volumes:
+      - ../cmd/email-service:/email-service/cmd/email-service
+      - ../config/email-service:/email-service/config/email-service
+      - ../config/shared:/email-service/config/shared
+      - ../pkg/email:/email-service/pkg/email
+      - ../pkg/middlewares:/email-service/pkg/middlewares
+    ports:
+      - "5200:5200"
+    command: ["bin/air", "-c", "/email-service/.air.toml"]
+    env_file:
+      - ../config/shared/dev.env
 
   postgres:
     image: postgres:16-alpine

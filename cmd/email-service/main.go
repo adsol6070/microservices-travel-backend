@@ -2,44 +2,49 @@ package main
 
 import (
 	"log"
-	"microservices-travel-backend/internal/email-service/adapters"
+	"microservices-travel-backend/internal/email-service/infrastructure/sendgrid"
 	"microservices-travel-backend/internal/email-service/services"
-	"microservices-travel-backend/pkg/email"
+	"microservices-travel-backend/internal/shared/rabbitmq/consumer"
 	"os"
-
-	"github.com/streadway/amqp"
+	"os/signal"
+	"syscall"
+	"time"
 )
 
 func main() {
-	// Retrieve SendGrid API Key from environment variable
-	sendGridAPIKey := os.Getenv("SENDGRID_API_KEY")
-	RABBITMQURL := os.Getenv("RABBITMQ_URL")
-	if sendGridAPIKey == "" {
-		log.Fatalf("SENDGRID_API_KEY is not set")
+	consumerConfig := consumer.Config{
+		QueueName:         "emailQueue",
+		AutoAck:           false,
+		RabbitMQURL:       os.Getenv("RABBITMQ_URL"),
+		ReconnectInterval: 6 * time.Second, 
 	}
 
-	// Create EmailClient using SendGrid API Key
-	emailClient := email.NewEmailClient(sendGridAPIKey)
-
-	// Create EmailService using the EmailClient
-	emailService := services.NewEmailService(emailClient)
-
-	// Set up RabbitMQ connection
-	conn, err := amqp.Dial(RABBITMQURL)
+	rabbitMQConsumer, err := consumer.NewRabbitMQConsumer(consumerConfig)
 	if err != nil {
-		log.Fatalf("Failed to connect to RabbitMQ: %v", err)
+		log.Fatal("Failed to initialize RabbitMQ consumer:", err)
 	}
-	defer conn.Close()
 
-	channel, err := conn.Channel()
+	sendGridClient := sendgrid.NewSendGridClient()
+	emailService := services.NewEmailService(sendGridClient)
+
+	msgs, err := rabbitMQConsumer.Consume()
 	if err != nil {
-		log.Fatalf("Failed to open a channel: %v", err)
+		log.Fatal("Failed to consume messages:", err)
 	}
-	defer channel.Close()
 
-	// Set up RabbitMQ Consumer
-	rabbitMQConsumer := adapters.NewRabbitMQConsumer(channel, emailService)
+	log.Println("Email Service is running and waiting for messages...")
 
-	// Start consuming emails
-	rabbitMQConsumer.ConsumeEmails()
+	go func() {
+		sig := make(chan os.Signal, 1)
+		signal.Notify(sig, syscall.SIGINT, syscall.SIGTERM)
+		<-sig
+		log.Println("Received shutdown signal. Cleaning up...")
+		rabbitMQConsumer.GracefulShutdown()
+		os.Exit(0)
+	}()
+
+	for msg := range msgs {
+		emailService.ProcessEmailMessage(msg)
+		rabbitMQConsumer.AcknowledgeMessage(msg)
+	}
 }

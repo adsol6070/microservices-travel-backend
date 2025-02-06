@@ -11,30 +11,43 @@ import (
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
-func (client *Client) Publish(done chan struct{}, message []byte, queueName, addr string) {
+func (client *Client) Publish(message []byte, queueName, addr string) error {
 	queue := New(queueName, addr)
 
-	ctx, cancel := context.WithDeadline(context.Background(), time.Now().Add(time.Second*20))
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
-loop:
-	for {
-		select {
-		// Attempt to push a message every 2 seconds
-		case <-time.After(time.Second * 2):
-			if err := queue.Push(message); err != nil {
-				queue.errlog.Printf("push failed: %s\n", err)
-			} else {
-				queue.infolog.Println("push succeeded")
+
+	errChan := make(chan error, 1)
+	go func() {
+		for {
+			select {
+			case <-ctx.Done():
+				errChan <- ctx.Err()
+				return
+			case <-time.After(time.Second * 2):
+				if err := queue.Push(message); err != nil {
+					queue.errlog.Printf("Push failed: %v", err)
+				} else {
+					queue.infolog.Println("Push succeeded")
+					errChan <- nil
+					return
+				}
 			}
-		case <-ctx.Done():
-			if err := queue.Close(); err != nil {
-				queue.errlog.Printf("close failed: %s\n", err)
-			}
-			break loop
 		}
+	}()
+
+	err := <-errChan
+	if err != nil {
+		queue.errlog.Printf("Failed to publish message: %v", err)
+	} else {
+		queue.infolog.Println("Message published successfully.")
 	}
 
-	close(done)
+	if err := queue.Close(); err != nil {
+		queue.errlog.Printf("Error closing the queue: %v", err)
+	}
+
+	return err
 }
 
 func (client *Client) consume(done chan struct{}) {

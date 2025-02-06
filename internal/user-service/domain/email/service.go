@@ -1,6 +1,7 @@
 package email
 
 import (
+	"log"
 	"microservices-travel-backend/internal/shared/rabbitmq"
 	"os"
 )
@@ -16,9 +17,12 @@ func NewEmailService(publisher *rabbitmq.Client) *EmailService {
 }
 
 func (s *EmailService) SendEmail(message []byte) error {
-	done := make(chan struct{})
-	go s.publisher.Publish(done, message, "emailQueue", os.Getenv("RABBITMQ_URL"))
+	go func() {
+		if err := s.publisher.Publish(message, "emailQueue", os.Getenv("RABBITMQ_URL")); err != nil {
+			log.Printf("Error while publishing email message: %v", err)
+		}
 
-	<-done
+	}()
+
 	return nil
 }

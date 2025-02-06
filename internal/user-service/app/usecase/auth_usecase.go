@@ -27,10 +27,13 @@ func (u *AuthUsecaseImpl) RegisterUser(ctx context.Context, userDetails *user.Us
 	}
 
 	emailMessage := []byte("Welcome " + userDetails.Name + "! You have successfully registered.")
-	err = u.emailService.SendEmail(emailMessage)
-	if err != nil {
-		log.Printf("Error sending registration email: %v", err)
-	}
+
+	go func() {
+		err = u.emailService.SendEmail(emailMessage)
+		if err != nil {
+			log.Printf("Error sending registration email: %v", err)
+		}
+	}()
 
 	return nil
 }

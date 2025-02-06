@@ -7,7 +7,7 @@ import (
 	"microservices-travel-backend/pkg/email"
 	"os"
 
-	"github.com/streadway/amqp"
+	amqp "github.com/streadway/amqp"
 )
 
 func main() {

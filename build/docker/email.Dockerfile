@@ -29,14 +29,14 @@ FROM base AS dev
 # Copy only service-specific files
 COPY .air.toml /email-service/.air.toml
 COPY cmd/email-service /email-service/cmd/email-service
-COPY internal/email-service/adapters/rabbitmq_consumer.go /email-service/adapters/rabbitmq_consumer.go
-COPY internal/email-service/services/email_service.go /email-service/services/email_service.go
+COPY internal/email-service/adapters/rabbitmq_consumer.go /email-service/internal/email-service/adapters/rabbitmq_consumer.go
+COPY internal/email-service/services/email_service.go /email-service/internal/email-service/services/email_service.go
 
 # Inject service name into the .air.toml file dynamically
 RUN sed -i 's/\$SERVICE_NAME/email-service/' /email-service/.air.toml
 
 # Expose the port the service listens on
-EXPOSE 7200
+EXPOSE 5200
 
 # Run Air for hot reloading
 CMD ["bin/air", "-c", "/email-service/.air.toml"]

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"microservices-travel-backend/internal/hotel-booking/domain"
 	"microservices-travel-backend/internal/hotel-booking/domain/amadeus"
 	"net/http"
 	"strings"
@@ -19,6 +20,12 @@ var (
 	httpClient         = &http.Client{Timeout: 10 * time.Second}
 	baseURL            = "https://test.api.amadeus.com"
 )
+
+type AmadeusClient struct{}
+
+func NewAmadeusClient() *AmadeusClient {
+	return &AmadeusClient{}
+}
 
 func GetValidAmadeusToken() (string, error) {
 	tokenMutex.Lock()
@@ -72,7 +79,7 @@ func GetAmadeusAuthToken() (string, error) {
 	return amadeusToken, nil
 }
 
-func FetchHotelOffers(hotelIDs []string, adults int) ([]amadeus.HotelOffer, error) {
+func (c *AmadeusClient) FetchHotelOffers(hotelIDs []string, adults int) ([]amadeus.HotelOffer, error) {
 	token, err := GetValidAmadeusToken()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get Amadeus token: %w", err)
@@ -108,4 +115,54 @@ func FetchHotelOffers(hotelIDs []string, adults int) ([]amadeus.HotelOffer, erro
 	}
 
 	return result.Data, nil
+}
+
+func (c *AmadeusClient) SearchHotels(cityCode string) ([]domain.Hotel, error) {
+	token, err := GetValidAmadeusToken()
+	if err != nil {
+		return nil, err
+	}
+
+	url := fmt.Sprintf("%s/v1/reference-data/locations/hotels/by-city?cityCode=%s", baseURL, cityCode)
+
+	req, _ := http.NewRequest("GET", url, nil)
+	req.Header.Set("Authorization", "Bearer "+token)
+
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	body, _ := io.ReadAll(resp.Body)
+	var result struct {
+		Data []struct {
+			HotelID     string `json:"hotelId"`
+			ChainCode   string `json:"chainCode"`
+			IATACode    string `json:"iataCode"`
+			CountryCode string `json:"countryCode"`
+			Name        string `json:"name"`
+			GeoCode     struct {
+				Latitude  float64 `json:"latitude"`
+				Longitude float64 `json:"longitude"`
+			} `json:"geoCode"`
+		} `json:"data"`
+	}
+
+	json.Unmarshal(body, &result)
+
+	hotels := make([]domain.Hotel, 0, len(result.Data))
+	for _, h := range result.Data {
+		hotels = append(hotels, domain.Hotel{
+			HotelID:     h.HotelID,
+			ChainCode:   h.ChainCode,
+			IATACode:    h.IATACode,
+			CountryCode: h.CountryCode,
+			Name:        h.Name,
+			Latitude:    h.GeoCode.Latitude,
+			Longitude:   h.GeoCode.Longitude,
+		})
+	}
+
+	return hotels, nil
 }

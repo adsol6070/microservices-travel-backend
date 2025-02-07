@@ -16,7 +16,7 @@ func NewEmailService(publisher *rabbitmq.Client) *EmailService {
 	}
 }
 
-func (s *EmailService) SendEmail(message []byte) error {
+func (s *EmailService) SendEmail(message Email) error {
 	go func() {
 		if err := s.publisher.Publish(message, "emailQueue", os.Getenv("RABBITMQ_URL")); err != nil {
 			log.Printf("Error while publishing email message: %v", err)

@@ -42,7 +42,7 @@ func (r *RabbitMQConsumer) connect() error {
 	r.Channel, err = r.Conn.Channel()
 	if err != nil {
 		return err
-		
+
 	}
 
 	return nil

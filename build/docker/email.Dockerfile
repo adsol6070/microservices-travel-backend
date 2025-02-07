@@ -1,4 +1,6 @@
+#=====================================
 # Stage 1: Base Image (Common for Dev & Prod)
+#=====================================
 FROM golang:1.23-alpine AS base
 
 # Set environment variables
@@ -23,37 +25,47 @@ COPY misc/make /email-service/misc/make
 # Install tools (migrate, air) using the Makefile
 RUN make deps
 
+#=====================================
 # Stage 2: Development (Hot Reloading)
+#=====================================
 FROM base AS dev
 
 # Copy only service-specific files
-COPY .air.toml /email-service/.air.toml
-COPY cmd/email-service /email-service/cmd/email-service
-COPY internal/email-service/adapters/rabbitmq_consumer.go /email-service/adapters/rabbitmq_consumer.go
-COPY internal/email-service/services/email_service.go /email-service/services/email_service.go
+COPY  .air.toml /email-service/.air.toml
+COPY  cmd/email-service /email-service/cmd/email-service
+COPY  config/email-service /email-service/config/email-service
+COPY  config/shared /email-service/config/shared
+COPY  internal/email-service /user-service/internal/email-service
+COPY  internal/shared/rabbitmq /email-service/internal/shared/rabbitmq
 
 # Inject service name into the .air.toml file dynamically
 RUN sed -i 's/\$SERVICE_NAME/email-service/' /email-service/.air.toml
 
 # Expose the port the service listens on
-EXPOSE 7200
+EXPOSE 8100
 
 # Run Air for hot reloading
 CMD ["bin/air", "-c", "/email-service/.air.toml"]
 
+#=====================================
 # Stage 3: Build Application (Production)
+#=====================================
 FROM base AS builder
 
-# Copy necessary service-specific files
-COPY cmd/email-service /email-service/cmd/email-service
-COPY adapters/rabbitmq_consumer.go /email-service/adapters/rabbitmq_consumer.go
-COPY services/email_service.go /email-service/services/email_service.go
+# Copy only necessary service-specific files
+COPY  cmd/email-service /email-service/cmd/email-service
+COPY  config/email-service /email-service/config/email-service
+COPY  config/shared /email-service/config/shared
+COPY  internal/email-service /user-service/internal/email-service
+COPY  internal/shared/rabbitmq /user-service/internal/shared/rabbitmq
 
 # Compile the Go application
 RUN go build -o /email-service/bin/email-service ./cmd/email-service
 
+#=====================================
 # Stage 4: Production Ready Image
-FROM alpine:latest AS prod
+#=====================================
+FROM alpine:latest AS prod 
 
 # Create a non-root user for security
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
@@ -61,17 +73,20 @@ RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 # Set the working directory
 WORKDIR /email-service
 
-# Copy the compiled binary from the builder stage
+# Copy only the compiled binary from the builder stage
 COPY --from=builder /email-service/bin/email-service /email-service/bin/email-service
 
 # Ensure correct permissions
-RUN chown -R appuser:appgroup /email-service
+RUN chown -R appuser:appgroup /user-service
 
 # Set non-root user
 USER appuser
 
 # Expose the application port
-EXPOSE 7200
+EXPOSE 8100
 
 # Run the compiled binary
 CMD ["/email-service/bin/email-service"]
+
+
+

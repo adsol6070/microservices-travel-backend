@@ -16,7 +16,7 @@ func main() {
 		QueueName:         "emailQueue",
 		AutoAck:           false,
 		RabbitMQURL:       os.Getenv("RABBITMQ_URL"),
-		ReconnectInterval: 6 * time.Second, 
+		ReconnectInterval: 6 * time.Second,
 	}
 
 	rabbitMQConsumer, err := consumer.NewRabbitMQConsumer(consumerConfig)

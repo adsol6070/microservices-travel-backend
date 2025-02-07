@@ -69,7 +69,7 @@ services:
       - ../config/email-service:/email-service/config/email-service
       - ../config/shared:/email-service/config/shared
     ports:
-      - "5200:5200"
+      - "8100:8100"
     command: ["bin/air", "-c", "/email-service/.air.toml"]
     env_file:
       - ../config/shared/dev.env

@@ -3,8 +3,8 @@ package services
 import (
 	"encoding/json"
 	"log"
-	"microservices-travel-backend/internal/email-service/infrastructure/sendgrid"
 	"microservices-travel-backend/internal/email-service/domain/models"
+	"microservices-travel-backend/internal/email-service/infrastructure/sendgrid"
 
 	amqp "github.com/rabbitmq/amqp091-go"
 )

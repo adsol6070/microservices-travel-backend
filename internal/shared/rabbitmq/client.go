@@ -2,7 +2,9 @@ package rabbitmq
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
+	"fmt"
 	"log"
 	"os"
 	"sync"
@@ -11,7 +13,7 @@ import (
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
-func (client *Client) Publish(message []byte, queueName, addr string) error {
+func (client *Client) Publish(message interface{}, queueName, addr string) error {
 	queue := New(queueName, addr)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
@@ -250,7 +252,7 @@ func (client *Client) changeChannel(channel *amqp.Channel) {
 	client.channel.NotifyPublish(client.notifyConfirm)
 }
 
-func (client *Client) Push(data []byte) error {
+func (client *Client) Push(data interface{}) error {
 	client.m.Lock()
 	if !client.isReady {
 		client.m.Unlock()
@@ -276,7 +278,7 @@ func (client *Client) Push(data []byte) error {
 	}
 }
 
-func (client *Client) UnsafePush(data []byte) error {
+func (client *Client) UnsafePush(data interface{}) error {
 	client.m.Lock()
 	if !client.isReady {
 		client.m.Unlock()
@@ -287,6 +289,22 @@ func (client *Client) UnsafePush(data []byte) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
+	// Convert data to []byte
+	var body []byte
+	switch v := data.(type) {
+	case []byte:
+		body = v
+	case string:
+		body = []byte(v)
+	default:
+		// Use JSON encoding for any other type
+		jsonData, err := json.Marshal(v)
+		if err != nil {
+			return fmt.Errorf("failed to marshal data: %v", err)
+		}
+		body = jsonData
+	}
+
 	return client.channel.PublishWithContext(
 		ctx,
 		"",               // Exchange
@@ -294,8 +312,8 @@ func (client *Client) UnsafePush(data []byte) error {
 		false,            // Mandatory
 		false,            // Immediate
 		amqp.Publishing{
-			ContentType: "text/plain",
-			Body:        data,
+			ContentType: "application/json",
+			Body:        body,
 		},
 	)
 }

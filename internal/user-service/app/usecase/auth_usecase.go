@@ -26,7 +26,11 @@ func (u *AuthUsecaseImpl) RegisterUser(ctx context.Context, userDetails *user.Us
 		return err
 	}
 
-	emailMessage := []byte("Welcome " + userDetails.Name + "! You have successfully registered.")
+	emailMessage := email.Email{
+		To:      userDetails.Email,
+		Subject: "Welcome to Our Platform!",
+		Body:    "Welcome " + userDetails.Name + "! You have successfully registered.",
+	}
 
 	go func() {
 		err = u.emailService.SendEmail(emailMessage)

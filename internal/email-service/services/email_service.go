@@ -1,25 +1,37 @@
 package services
 
 import (
-    "fmt"
-    "microservices-travel-backend/pkg/email"
+	"encoding/json"
+	"log"
+	"microservices-travel-backend/internal/email-service/domain/models"
+	"microservices-travel-backend/internal/email-service/infrastructure/sendgrid"
+
+	amqp "github.com/rabbitmq/amqp091-go"
 )
 
+// EmailService processes email messages
 type EmailService struct {
-    client *email.EmailClient
+	SendGridClient *sendgrid.SendGridClient
 }
 
-func NewEmailService(client *email.EmailClient) *EmailService {
-    return &EmailService{
-        client: client,
-    }
+// NewEmailService initializes an email service
+func NewEmailService(sendGridClient *sendgrid.SendGridClient) *EmailService {
+	return &EmailService{SendGridClient: sendGridClient}
 }
 
-// SendCustomEmail allows sending a custom email (used for other notifications)
-func (s *EmailService) SendCustomEmail(to, subject, body string) error {
-    err := s.client.SendEmail(to, subject, body)
-    if err != nil {
-        return fmt.Errorf("failed to send custom email: %v", err)
-    }
-    return nil
+// ProcessEmailMessage processes a RabbitMQ message and sends an email
+func (e *EmailService) ProcessEmailMessage(msg amqp.Delivery) {
+	var email models.Email
+	err := json.Unmarshal(msg.Body, &email)
+	if err != nil {
+		log.Println("Failed to parse email message:", err)
+		return
+	}
+
+	err = e.SendGridClient.SendEmail(email.To, email.Subject, email.Body)
+	if err != nil {
+		log.Println("Failed to send email:", err)
+	} else {
+		log.Println("Email successfully sent to", email.To)
+	}
 }

@@ -1,46 +1,32 @@
 package main
 
 import (
+	"fmt"
 	"log"
-	"microservices-travel-backend/internal/hotel-booking/adapters/handlers"
-	"microservices-travel-backend/internal/hotel-booking/adapters/hotel_provider"
-	"microservices-travel-backend/internal/hotel-booking/adapters/repositories"
-	"microservices-travel-backend/internal/hotel-booking/domain/mapper"
-	"microservices-travel-backend/internal/hotel-booking/domain/ports"
-	"microservices-travel-backend/internal/hotel-booking/services"
-	"net/http"
-	"os"
-
-	"github.com/gorilla/mux"
+	"microservices-travel-backend/internal/hotel-booking/infrastructure"
 )
 
 func main() {
-	repo, err := repositories.NewPostgresRepository()
+	hotelIDs := []string{"ALBLR275", "ALBLR545"}
+	adults := 1
 
+	offers, err := infrastructure.FetchHotelOffers(hotelIDs, adults)
 	if err != nil {
-		log.Fatalf("Failed to create repository: %v", err)
+		log.Fatalf("❌ Error fetching hotel offers: %v", err)
 	}
 
-	expedia_provider := hotel_provider.NewExpediaAdapter("dfgdfgfdg")
-
-	providers := []ports.HotelProvider{expedia_provider}
-
-	hotelMapper := mapper.NewHotelMapper()
-
-	service := services.NewHotelService(repo, providers, hotelMapper)
-
-	hotelHandler := handlers.NewHotelHandler(service)
-
-	router := mux.NewRouter()
-
-	hotelHandler.RegisterRoutes(router)
-
-	port := ":5100"
-	baseURL := os.Getenv("HOTEL_API_BASE_URL")
-	log.Printf("Starting Hotel Booking Service on port %s with base URL: %s", port, baseURL)
-
-	err = http.ListenAndServe(port, router)
-	if err != nil {
-		log.Fatalf("Failed to start server: %v", err)
+	fmt.Println("\n📌 **Available Hotel Offers**\n")
+	for _, hotel := range offers {
+		fmt.Printf("🏨 **Hotel:** %s (%s)\n", hotel.Hotel.Name, hotel.Hotel.CityCode)
+		fmt.Printf("   📍 Location: (%.5f, %.5f)\n", hotel.Hotel.Latitude, hotel.Hotel.Longitude)
+		fmt.Println("   -----------------------------------")
+		for _, roomOffer := range hotel.Offers {
+			fmt.Printf("   ✅ **Room Type:** %s\n", roomOffer.Room.TypeEstimated.Category)
+			fmt.Printf("   🛏 Beds: %d (%s)\n", roomOffer.Room.TypeEstimated.Beds, roomOffer.Room.TypeEstimated.BedType)
+			fmt.Printf("   💰 Price: %s %s\n", roomOffer.Price.Currency, roomOffer.Price.Total)
+			fmt.Printf("   📅 Check-in: %s | Check-out: %s\n", roomOffer.CheckInDate, roomOffer.CheckOutDate)
+			fmt.Printf("   📝 Description: %s\n", roomOffer.Room.Description.Text)
+			fmt.Println("   -----------------------------------")
+		}
 	}
 }

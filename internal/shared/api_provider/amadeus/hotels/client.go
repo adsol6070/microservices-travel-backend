@@ -10,7 +10,6 @@ import (
 	"sync"
 	"time"
 
-	"microservices-travel-backend/internal/hotel-booking/domain"
 	"microservices-travel-backend/internal/shared/api_provider/amadeus/hotels/models"
 )
 
@@ -108,46 +107,35 @@ func (c *AmadeusClient) FetchHotelOffers(hotelIDs []string, adults int) ([]model
 	return result.Data, nil
 }
 
-func (c *AmadeusClient) SearchHotels(cityCode string) ([]domain.Hotel, error) {
+func (c *AmadeusClient) HotelSearch(cityCode string) ([]models.HotelData, error) {
 	token, err := c.TokenManager.GetValidToken()
 	if err != nil {
 		return nil, fmt.Errorf("failed to retrieve Amadeus token: %w", err)
 	}
 
-	url := fmt.Sprintf("%s/v1/reference-data/locations/hotels/by-city?cityCode=%s", c.BaseURL, cityCode)
+	url := fmt.Sprintf("%s/v1/reference-data/locations/hotels/by-city?cityCode=%s", c.BaseURL, strings.ToUpper(cityCode))
 
-	var response struct {
-		Data []struct {
-			HotelID     string `json:"hotelId"`
-			ChainCode   string `json:"chainCode"`
-			IATACode    string `json:"iataCode"`
-			CountryCode string `json:"countryCode"`
-			Name        string `json:"name"`
-			GeoCode     struct {
-				Latitude  float64 `json:"latitude"`
-				Longitude float64 `json:"longitude"`
-			} `json:"geoCode"`
-		} `json:"data"`
-	}
-
-	if err := c.makeRequest("GET", url, token, nil, &response); err != nil {
+	var result models.HotelListResponse
+	if err := c.makeRequest("GET", url, token, nil, &result); err != nil {
 		return nil, err
 	}
 
-	hotels := make([]domain.Hotel, len(response.Data))
-	for i, h := range response.Data {
-		hotels[i] = domain.Hotel{
-			HotelID:     h.HotelID,
-			ChainCode:   h.ChainCode,
-			IATACode:    h.IATACode,
-			CountryCode: h.CountryCode,
-			Name:        h.Name,
-			Latitude:    h.GeoCode.Latitude,
-			Longitude:   h.GeoCode.Longitude,
-		}
+	return result.Data, nil
+}
+
+func (c *AmadeusClient) CreateHotelBooking(requestBody []byte) (*models.HotelBookingResponse, error) {
+	token, err := c.TokenManager.GetValidToken()
+	if err != nil {
+		return nil, fmt.Errorf("failed to retrieve Amadeus token: %w", err)
 	}
 
-	return hotels, nil
+	url := fmt.Sprintf("%s/v1/booking/hotel-orders", c.BaseURL)
+	var result models.HotelBookingResponse
+	if err := c.makeRequest("POST", url, token, bytes.NewBuffer(requestBody), &result); err != nil {
+		return nil, err
+	}
+
+	return &result, nil
 }
 
 func (c *AmadeusClient) makeRequest(method, url, token string, body interface{}, result interface{}) error {

@@ -17,6 +17,22 @@ func main() {
 	adults := 1
 
 	client := hotels.NewAmadeusClient("ldK8AEKr1ryNBhfpEMNkux4CwjydYqrX", "8DJFOdD0t7pbUQSf")
+
+	cityCode := "BLR" // Example: Bangalore city code
+	hotelsList, err := client.HotelSearch(cityCode)
+	if err != nil {
+		log.Fatalf("❌ Error fetching hotel list: %v", err)
+	}
+
+	fmt.Println("\n📌 **Hotels in the City**\n")
+	for _, hotel := range hotelsList {
+		fmt.Printf("🏨 **Hotel Name:** %s\n", hotel.Name)
+		fmt.Printf("   🏙 Country Code: %s\n", hotel.Address.CountryCode)
+		fmt.Printf("   🏙 Chain Code: %s\n", hotel.ChainCode)
+		fmt.Printf("   📍 Location: (%.5f, %.5f)\n", hotel.GeoCode.Latitude, hotel.GeoCode.Longitude)
+		fmt.Println("   -----------------------------------")
+	}
+
 	offers, err := client.FetchHotelOffers(hotelIDs, adults)
 	if err != nil {
 		log.Fatalf("❌ Error fetching hotel offers: %v", err)

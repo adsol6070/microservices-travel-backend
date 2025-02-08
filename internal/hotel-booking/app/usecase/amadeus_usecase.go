@@ -1,7 +1,6 @@
 package usecase
 
 import (
-	"microservices-travel-backend/internal/hotel-booking/infrastructure"
 	"microservices-travel-backend/internal/hotel-booking/domain"
 )
 

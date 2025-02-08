@@ -16,7 +16,7 @@ func main() {
 	hotelIDs := []string{"ALBLR275", "ALBLR545"}
 	adults := 1
 
-	client := hotels.NewAmadeusClient("", "")
+	client := hotels.NewAmadeusClient("ldK8AEKr1ryNBhfpEMNkux4CwjydYqrX", "8DJFOdD0t7pbUQSf")
 	offers, err := client.FetchHotelOffers(hotelIDs, adults)
 	if err != nil {
 		log.Fatalf("❌ Error fetching hotel offers: %v", err)

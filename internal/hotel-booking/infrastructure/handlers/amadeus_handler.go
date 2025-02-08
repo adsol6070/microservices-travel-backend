@@ -2,7 +2,7 @@ package delivery
 
 import (
 	"encoding/json"
-	"microservices-travel-backend/internal/hotel-booking/usecase"
+	"microservices-travel-backend/internal/hotel-booking/app/usecase"
 	"net/http"
 
 	"github.com/gorilla/mux"

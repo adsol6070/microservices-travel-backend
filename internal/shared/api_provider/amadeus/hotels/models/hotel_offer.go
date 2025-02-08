@@ -1,4 +1,4 @@
-package amadeus
+package models
 
 type HotelOffersResponse struct {
 	Data     []HotelOffer `json:"data"`

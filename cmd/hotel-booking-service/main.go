@@ -3,15 +3,37 @@ package main
 import (
 	"fmt"
 	"log"
-	"microservices-travel-backend/internal/hotel-booking/infrastructure"
+	"microservices-travel-backend/internal/shared/api_provider/amadeus/hotels"
+	"net/http"
+	"os"
+
+	"github.com/gorilla/mux"
 )
 
 func main() {
+	logger := log.New(os.Stdout, "hotel-service: ", log.LstdFlags|log.Lshortfile)
+
 	hotelIDs := []string{"ALBLR275", "ALBLR545"}
 	adults := 1
 
-	amadeusClient := infrastructure.NewAmadeusClient()
-	offers, err := amadeusClient.FetchHotelOffers(hotelIDs, adults)
+	client := hotels.NewAmadeusClient("ldK8AEKr1ryNBhfpEMNkux4CwjydYqrX", "8DJFOdD0t7pbUQSf")
+
+	cityCode := "BLR" // Example: Bangalore city code
+	hotelsList, err := client.HotelSearch(cityCode)
+	if err != nil {
+		log.Fatalf("❌ Error fetching hotel list: %v", err)
+	}
+
+	fmt.Println("\n📌 **Hotels in the City**\n")
+	for _, hotel := range hotelsList {
+		fmt.Printf("🏨 **Hotel Name:** %s\n", hotel.Name)
+		fmt.Printf("   🏙 Country Code: %s\n", hotel.Address.CountryCode)
+		fmt.Printf("   🏙 Chain Code: %s\n", hotel.ChainCode)
+		fmt.Printf("   📍 Location: (%.5f, %.5f)\n", hotel.GeoCode.Latitude, hotel.GeoCode.Longitude)
+		fmt.Println("   -----------------------------------")
+	}
+
+	offers, err := client.FetchHotelOffers(hotelIDs, adults)
 	if err != nil {
 		log.Fatalf("❌ Error fetching hotel offers: %v", err)
 	}
@@ -30,4 +52,14 @@ func main() {
 			fmt.Println("   -----------------------------------")
 		}
 	}
+
+	router := mux.NewRouter()
+
+	// Set Port and Start Server
+	serverPort := "5100"
+	logger.Printf("Starting server on port %s...\n", "5100")
+	if err := http.ListenAndServe(":"+serverPort, router); err != nil {
+		logger.Fatalf("Failed to start server: %v", err)
+	}
+
 }

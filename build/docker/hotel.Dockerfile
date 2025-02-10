@@ -36,6 +36,7 @@ COPY  cmd/hotel-booking-service /hotel-booking-service/cmd/hotel-booking-service
 COPY  config/hotel-booking /hotel-booking-service/config/hotel-booking
 COPY  config/shared /hotel-booking-service/config/shared
 COPY  internal/hotel-booking /hotel-booking-service/internal/hotel-booking
+COPY  internal/shared /hotel-booking-service/internal/shared
 COPY  pkg/middlewares /hotel-booking-service/pkg/middlewares
 
 # Inject service name into the .air.toml file dynamically
@@ -57,6 +58,7 @@ COPY  cmd/hotel-booking-service /hotel-booking-service/cmd/hotel-booking-service
 COPY  config/hotel-booking /hotel-booking-service/config/hotel-booking
 COPY  config/shared /hotel-booking-service/config/shared
 COPY  internal/hotel-booking /hotel-booking-service/internal/hotel-booking
+COPY  internal/shared /hotel-booking-service/internal/shared
 COPY  pkg/middlewares /hotel-booking-service/pkg/middlewares
 
 # Compile the Go application

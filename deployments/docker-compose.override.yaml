@@ -10,6 +10,7 @@ services:
       - ../config/hotel-booking:/hotel-booking-service/config/hotel-booking
       - ../config/shared:/hotel-booking-service/config/shared
       - ../internal/hotel-booking:/hotel-booking-service/internal/hotel-booking
+      - ../internal/shared:/hotel-booking-service/internal/shared
       - ../pkg/middlewares:/hotel-booking-service/pkg/middlewares
     ports:
       - "5100:5100"

@@ -11,15 +11,16 @@ import (
 )
 
 type HotelHandler struct {
-	hotelUsecase usecase.HotelUsecase
+	hotelUsecase *usecase.HotelUsecase
 }
 
-func NewHotelHandler(r *mux.Router, hotelUsecase usecase.HotelUsecase) {
+func NewHotelHandler(r *mux.Router, hotelUsecase *usecase.HotelUsecase) {
 	handler := &HotelHandler{
 		hotelUsecase: hotelUsecase,
 	}
 
 	r.HandleFunc("/hotels/search", handler.SearchHotels).Methods("GET")
+	r.HandleFunc("/hotels/offers", handler.FetchHotelOffers).Methods("GET")
 }
 
 func (h *HotelHandler) SearchHotels(w http.ResponseWriter, r *http.Request) {

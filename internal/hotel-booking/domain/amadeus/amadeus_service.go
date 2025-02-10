@@ -6,10 +6,10 @@ import (
 )
 
 type AmadeusService struct {
-	client hotels.AmadeusClient
+	client *hotels.AmadeusClient
 }
 
-func NewAmadeusService(client hotels.AmadeusClient) *AmadeusService {
+func NewAmadeusService(client *hotels.AmadeusClient) *AmadeusService {
 	return &AmadeusService{
 		client: client,
 	}
@@ -23,8 +23,8 @@ func (a *AmadeusService) FetchHotelOffers(hotelIDs []string, adults int) ([]mode
 	return offers, nil
 }
 
-func (a *AmadeusService) SearchHotels(cityCode string) ([]models.Hotel, error) {
-	hotels, err := a.client.SearchHotels(cityCode)
+func (a *AmadeusService) SearchHotels(cityCode string) ([]models.HotelData, error) {
+	hotels, err := a.client.HotelSearch(cityCode)
 	if err != nil {
 		return nil, err
 	}

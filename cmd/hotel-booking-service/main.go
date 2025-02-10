@@ -1,8 +1,10 @@
 package main
 
 import (
-	"fmt"
 	"log"
+	"microservices-travel-backend/internal/hotel-booking/app/usecase"
+	"microservices-travel-backend/internal/hotel-booking/domain/amadeus"
+	"microservices-travel-backend/internal/hotel-booking/infrastructure/handlers"
 	"microservices-travel-backend/internal/shared/api_provider/amadeus/hotels"
 	"net/http"
 	"os"
@@ -13,48 +15,15 @@ import (
 func main() {
 	logger := log.New(os.Stdout, "hotel-service: ", log.LstdFlags|log.Lshortfile)
 
-	hotelIDs := []string{"ALBLR275", "ALBLR545"}
-	adults := 1
-
 	client := hotels.NewAmadeusClient("ldK8AEKr1ryNBhfpEMNkux4CwjydYqrX", "8DJFOdD0t7pbUQSf")
 
-	cityCode := "BLR" // Example: Bangalore city code
-	hotelsList, err := client.HotelSearch(cityCode)
-	if err != nil {
-		log.Fatalf("❌ Error fetching hotel list: %v", err)
-	}
+	amadeusService := amadeus.NewAmadeusService(client)
 
-	fmt.Println("\n📌 **Hotels in the City**\n")
-	for _, hotel := range hotelsList {
-		fmt.Printf("🏨 **Hotel Name:** %s\n", hotel.Name)
-		fmt.Printf("   🏙 Country Code: %s\n", hotel.Address.CountryCode)
-		fmt.Printf("   🏙 Chain Code: %s\n", hotel.ChainCode)
-		fmt.Printf("   📍 Location: (%.5f, %.5f)\n", hotel.GeoCode.Latitude, hotel.GeoCode.Longitude)
-		fmt.Println("   -----------------------------------")
-	}
-
-	offers, err := client.FetchHotelOffers(hotelIDs, adults)
-	if err != nil {
-		log.Fatalf("❌ Error fetching hotel offers: %v", err)
-	}
-
-	fmt.Println("\n📌 **Available Hotel Offers**\n")
-	for _, hotel := range offers {
-		fmt.Printf("🏨 **Hotel:** %s (%s)\n", hotel.Hotel.Name, hotel.Hotel.CityCode)
-		fmt.Printf("   📍 Location: (%.5f, %.5f)\n", hotel.Hotel.Latitude, hotel.Hotel.Longitude)
-		fmt.Println("   -----------------------------------")
-		for _, roomOffer := range hotel.Offers {
-			fmt.Printf("   ✅ **Room Type:** %s\n", roomOffer.Room.TypeEstimated.Category)
-			fmt.Printf("   🛏 Beds: %d (%s)\n", roomOffer.Room.TypeEstimated.Beds, roomOffer.Room.TypeEstimated.BedType)
-			fmt.Printf("   💰 Price: %s %s\n", roomOffer.Price.Currency, roomOffer.Price.Total)
-			fmt.Printf("   📅 Check-in: %s | Check-out: %s\n", roomOffer.CheckInDate, roomOffer.CheckOutDate)
-			fmt.Printf("   📝 Description: %s\n", roomOffer.Room.Description.Text)
-			fmt.Println("   -----------------------------------")
-		}
-	}
+	amadeusUsecase := usecase.NewHotelUsecase(amadeusService)
 
 	router := mux.NewRouter()
 
+	handlers.NewHotelHandler(router, amadeusUsecase)
 	// Set Port and Start Server
 	serverPort := "5100"
 	logger.Printf("Starting server on port %s...\n", "5100")

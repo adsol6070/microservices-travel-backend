@@ -129,7 +129,7 @@ func (c *AmadeusClient) CreateHotelBooking(requestBody []byte) (*models.HotelBoo
 		return nil, fmt.Errorf("failed to retrieve Amadeus token: %w", err)
 	}
 
-	url := fmt.Sprintf("%s/v1/booking/hotel-orders", c.BaseURL)
+	url := fmt.Sprintf("%s/v2/booking/hotel-orders", c.BaseURL)
 	var result models.HotelBookingResponse
 	if err := c.makeRequest("POST", url, token, bytes.NewBuffer(requestBody), &result); err != nil {
 		return nil, err

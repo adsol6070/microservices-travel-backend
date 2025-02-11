@@ -2,7 +2,9 @@ package handlers
 
 import (
 	"encoding/json"
+	"io"
 	"microservices-travel-backend/internal/hotel-booking/app/usecase"
+	"microservices-travel-backend/internal/shared/api_provider/amadeus/hotels/models"
 	"net/http"
 	"strconv"
 	"strings"
@@ -21,6 +23,7 @@ func NewHotelHandler(r *mux.Router, hotelUsecase *usecase.HotelUsecase) {
 
 	r.HandleFunc("/hotels/search", handler.SearchHotels).Methods("GET")
 	r.HandleFunc("/hotels/offers", handler.FetchHotelOffers).Methods("GET")
+	r.HandleFunc("/hotels/book", handler.CreateHotelBooking).Methods("POST")
 }
 
 func (h *HotelHandler) SearchHotels(w http.ResponseWriter, r *http.Request) {
@@ -66,4 +69,30 @@ func (h *HotelHandler) FetchHotelOffers(w http.ResponseWriter, r *http.Request) 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(offers)
+}
+
+func (h *HotelHandler) CreateHotelBooking(w http.ResponseWriter, r *http.Request) {
+	requestBody, err := io.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, "Failed to read request body", http.StatusBadRequest)
+		return
+	}
+	defer r.Body.Close()
+
+	var bookingRequest models.HotelBookingRequest
+	err = json.Unmarshal(requestBody, &bookingRequest)
+	if err != nil {
+		http.Error(w, "Invalid request format", http.StatusBadRequest)
+		return
+	}
+
+	bookingResponse, err := h.hotelUsecase.CreateHotelBooking(bookingRequest)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(bookingResponse)
 }

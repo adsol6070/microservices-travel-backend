@@ -1,19 +1,36 @@
 package models
 
-type HotelBookingResponse struct {
-	Data     BookingData  `json:"data"`
-	Warnings []APIWarning `json:"warnings"`
+type HotelBookingRequest struct {
+	Data HotelOrderData `json:"data"`
 }
 
-type BookingData struct {
+type HotelBookingResponse struct {
+	Data     HotelOrderData `json:"data"`
+	Warnings []APIWarning   `json:"warnings"`
+}
+
+type HotelOrderData struct {
+	Type              string             `json:"type"`
 	ID                string             `json:"id"`
-	HotelBookings     []HotelBooking     `json:"hotelBookings"`
 	Guests            []Guest            `json:"guests"`
+	TravelAgent       TravelAgent        `json:"travelAgent"`
+	RoomAssociations  []RoomAssociation  `json:"roomAssociations"`
+	Payment           PaymentDetails     `json:"payment"`
+	HotelBookings     []HotelBooking     `json:"hotelBookings"`
 	AssociatedRecords []AssociatedRecord `json:"associatedRecords"`
 	Self              string             `json:"self"`
 }
 
+type TravelAgent struct {
+	Contact Contact `json:"contact"`
+}
+
+type Contact struct {
+	Email string `json:"email"`
+}
+
 type HotelBooking struct {
+	Type                     string              `json:"type"`
 	ID                       string              `json:"id"`
 	BookingStatus            string              `json:"bookingStatus"`
 	HotelProviderInformation []HotelProviderInfo `json:"hotelProviderInformation"`
@@ -34,40 +51,27 @@ type RoomAssociation struct {
 	GuestReferences []GuestBookReference `json:"guestReferences"`
 }
 
+type GuestBookReference struct {
+	GuestReference string `json:"guestReference"`
+}
+
 type HotelBookOffer struct {
-	ID           string `json:"id"`
-	Category     string `json:"category"`
-	CheckInDate  string `json:"checkInDate"`
-	CheckOutDate string `json:"checkOutDate"`
-	Guests       struct {
-		Adults int `json:"adults"`
-	} `json:"guests"`
-	Policies Policies `json:"policies"`
-	Price    Price    `json:"price"`
-	RateCode string   `json:"rateCode"`
-	Room     Room     `json:"room"`
+	ID           string      `json:"id"`
+	Type         string      `json:"type"`
+	Category     string      `json:"category"`
+	CheckInDate  string      `json:"checkInDate"`
+	CheckOutDate string      `json:"checkOutDate"`
+	Guests       Guests      `json:"guests"`
+	Policies     Policies    `json:"policies"`
+	Price        Price       `json:"price"`
+	RateCode     string      `json:"rateCode"`
+	Room         RoomDetails `json:"room"`
+	RoomQuantity int         `json:"roomQuantity"`
 }
 
-type PoliciesBook struct {
-	Cancellations []Cancellation `json:"cancellations"`
-	PaymentType   string         `json:"paymentType"`
-	Refundable    struct {
-		CancellationRefund string `json:"cancellationRefund"`
-	} `json:"refundable"`
-}
-
-type CancellationBook struct {
-	Amount     string `json:"amount"`
-	Deadline   string `json:"deadline"`
-	PolicyType string `json:"policyType"`
-}
-
-type PriceBook struct {
-	Base         string `json:"base"`
-	Currency     string `json:"currency"`
-	SellingTotal string `json:"sellingTotal"`
-	Taxes        []Tax  `json:"taxes"`
-	Total        string `json:"total"`
+type RoomDetails struct {
+	Description Description `json:"description"`
+	Type        string      `json:"type"`
 }
 
 type Tax struct {
@@ -77,14 +81,6 @@ type Tax struct {
 	Included         bool   `json:"included"`
 	PricingFrequency string `json:"pricingFrequency"`
 	PricingMode      string `json:"pricingMode"`
-}
-
-type RoomBook struct {
-	Description struct {
-		Lang string `json:"lang"`
-		Text string `json:"text"`
-	} `json:"description"`
-	Type string `json:"type"`
 }
 
 type HotelInfo struct {
@@ -100,12 +96,14 @@ type PaymentDetails struct {
 }
 
 type Card struct {
-	PaymentCardInfo struct {
-		VendorCode string `json:"vendorCode"`
-		CardNumber string `json:"cardNumber"`
-		ExpiryDate string `json:"expiryDate"`
-		HolderName string `json:"holderName"`
-	} `json:"paymentCardInfo"`
+	PaymentCardInfo PaymentCardInfo `json:"paymentCardInfo"`
+}
+
+type PaymentCardInfo struct {
+	VendorCode string `json:"vendorCode"`
+	CardNumber string `json:"cardNumber"`
+	ExpiryDate string `json:"expiryDate"`
+	HolderName string `json:"holderName"`
 }
 
 type Guest struct {
@@ -118,10 +116,6 @@ type Guest struct {
 	Email     string `json:"email"`
 }
 
-type GuestBookReference struct {
-	GuestID int `json:"guestId"`
-}
-
 type AssociatedRecord struct {
 	Reference        string `json:"reference"`
 	OriginSystemCode string `json:"originSystemCode"`
@@ -131,3 +125,4 @@ type APIWarning struct {
 	Code  int    `json:"code"`
 	Title string `json:"title"`
 }
+

@@ -30,3 +30,11 @@ func (a *AmadeusService) SearchHotels(cityCode string) ([]models.HotelData, erro
 	}
 	return hotels, nil
 }
+
+func (a *AmadeusService) CreateHotelBooking(requestBody models.HotelBookingRequest) (*models.HotelOrderResponse, error) {
+	booking, err := a.client.CreateHotelBooking(requestBody)
+	if err != nil {
+		return nil, err
+	}
+	return booking, nil
+}

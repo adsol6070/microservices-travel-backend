@@ -83,31 +83,26 @@ func (s *AuthService) Login(ctx context.Context, userDetails *user.User) (string
 }
 
 func (s *AuthService) ResetPassword(ctx context.Context, token, newPassword string) error {
-	// Validate JWT token
 	claims, err := security.ValidateJWT(token)
 	if err != nil {
 		return fmt.Errorf("invalid or expired token: %w", err)
 	}
 
-	// Extract userID from claims
 	userID, ok := claims["userID"].(string)
 	if !ok {
 		return errors.New("invalid token payload")
 	}
 
-	// Fetch user by ID
 	user, err := s.userRepo.GetByID(ctx, userID)
 	if err != nil {
 		return errors.New("user not found")
 	}
 
-	// Hash new password
 	hashedPassword, err := security.HashPassword(newPassword)
 	if err != nil {
 		return errors.New("failed to hash password")
 	}
 
-	// Update password in database
 	err = s.authRepo.UpdatePassword(ctx, user.ID, hashedPassword)
 	if err != nil {
 		return fmt.Errorf("failed to update password: %w", err)
@@ -116,29 +111,21 @@ func (s *AuthService) ResetPassword(ctx context.Context, token, newPassword stri
 	return nil
 }
 
-func (s *AuthService) ForgotPassword(ctx context.Context, email string) error {
+func (s *AuthService) ForgotPassword(ctx context.Context, email string) (string, *user.User, error) {
 	user, err := s.userRepo.GetByEmail(ctx, email)
 	if err != nil {
-		return fmt.Errorf("failed to fetch user: %w", err)
+		return "", nil, fmt.Errorf("failed to fetch user: %w", err)
 	}
 	if user == nil {
-		return errors.New("user not found")
+		return "", nil, errors.New("user not found")
 	}
 
-	// Generate JWT reset token with user ID as a claim
 	resetToken, err := security.GenerateJWT(map[string]interface{}{
 		"userID": user.ID,
 	})
 	if err != nil {
-		return fmt.Errorf("failed to generate reset token: %w", err)
+		return "", nil, fmt.Errorf("failed to generate reset token: %w", err)
 	}
 
-	// Send email with reset token
-	return sendResetPasswordEmail(user.Email, resetToken)
-}
-
-func sendResetPasswordEmail(email, resetToken string) error {
-	resetLink := fmt.Sprintf("https://yourwebsite.com/reset-password?token=%s", resetToken)
-	fmt.Printf("Sending password reset email to %s with link: %s\n", email, resetLink)
-	return nil
+	return resetToken, user, nil
 }

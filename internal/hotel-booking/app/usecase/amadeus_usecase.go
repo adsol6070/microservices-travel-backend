@@ -30,3 +30,11 @@ func (u *HotelUsecase) FetchHotelOffers(hotelIDs []string, adults int) ([]models
 	}
 	return offers, nil
 }
+
+func (u *HotelUsecase) CreateHotelBooking(requestBody models.HotelBookingRequest) (*models.HotelOrderResponse, error) {
+	booking, err := u.service.CreateHotelBooking(requestBody)
+	if err != nil {
+		return nil, err
+	}
+	return booking, nil
+}

@@ -21,7 +21,6 @@ func (s *EmailService) SendEmail(message Email) error {
 		if err := s.publisher.Publish(message, "emailQueue", os.Getenv("RABBITMQ_URL")); err != nil {
 			log.Printf("Error while publishing email message: %v", err)
 		}
-
 	}()
 
 	return nil

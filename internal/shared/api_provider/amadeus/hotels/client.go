@@ -123,15 +123,15 @@ func (c *AmadeusClient) HotelSearch(cityCode string) ([]models.HotelData, error)
 	return result.Data, nil
 }
 
-func (c *AmadeusClient) CreateHotelBooking(requestBody []byte) (*models.HotelBookingResponse, error) {
+func (c *AmadeusClient) CreateHotelBooking(requestBody models.HotelBookingRequest) (*models.HotelOrderResponse, error) {
 	token, err := c.TokenManager.GetValidToken()
 	if err != nil {
 		return nil, fmt.Errorf("failed to retrieve Amadeus token: %w", err)
 	}
 
 	url := fmt.Sprintf("%s/v2/booking/hotel-orders", c.BaseURL)
-	var result models.HotelBookingResponse
-	if err := c.makeRequest("POST", url, token, bytes.NewBuffer(requestBody), &result); err != nil {
+	var result models.HotelOrderResponse
+	if err := c.makeRequest("POST", url, token, requestBody, &result); err != nil {
 		return nil, err
 	}
 
@@ -161,9 +161,8 @@ func (c *AmadeusClient) makeRequest(method, url, token string, body interface{},
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
-		respBody, _ := io.ReadAll(resp.Body)
-		return fmt.Errorf("API request failed, status: %s, response: %s", resp.Status, string(respBody))
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
+		return fmt.Errorf("request failed, status: %s", resp.Status)
 	}
 
 	respBody, err := io.ReadAll(resp.Body)

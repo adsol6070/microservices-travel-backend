@@ -9,5 +9,5 @@ type AuthService interface {
 	Register(ctx context.Context, userDetails *user.User) error
 	Login(ctx context.Context, userDetails *user.User) (string, error)
 	ResetPassword(ctx context.Context, token, newPassword string) error
-	ForgotPassword(ctx context.Context, email string) error
+	ForgotPassword(ctx context.Context, email string) (string, *user.User, error)
 }

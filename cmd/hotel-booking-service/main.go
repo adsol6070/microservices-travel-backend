@@ -15,11 +15,11 @@ import (
 func main() {
 	logger := log.New(os.Stdout, "hotel-service: ", log.LstdFlags|log.Lshortfile)
 
-	client := hotels.NewAmadeusClient("ldK8AEKr1ryNBhfpEMNkux4CwjydYqrX", "8DJFOdD0t7pbUQSf")
+	client := hotels.NewAmadeusClient(os.Getenv("AMADEUS_API_KEY"), os.Getenv("AMADEUS_SECRET"), os.Getenv("REDIS_URL"))
 
 	amadeusService := amadeus.NewAmadeusService(client)
 
-	amadeusUsecase := usecase.NewHotelUsecase(amadeusService)
+	amadeusUsecase := usecase.NewHotelUsecase(amadeusService) 
 
 	router := mux.NewRouter()
 

@@ -41,7 +41,7 @@ services:
       - ../config/shared/prod.env
       - ../config/user-service/prod.env
     restart: on-failure
-  
+
   email-service:
     build:
       context: ../
@@ -80,3 +80,28 @@ services:
       PGADMIN_DEFAULT_PASSWORD: securepass
     ports:
       - "5050:80"
+
+  redis:
+    image: redis:6.2-alpine
+    container_name: redis-prod
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    command:
+      [
+        "redis-server",
+        "--save",
+        "900",
+        "1",
+        "--loglevel",
+        "notice",
+        "--appendonly",
+        "yes",
+      ]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      retries: 3
+      timeout: 5s

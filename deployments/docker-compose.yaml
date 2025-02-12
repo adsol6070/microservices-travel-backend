@@ -19,6 +19,10 @@ services:
     networks:
       - service-network
 
+  redis:
+    networks:
+      - service-network
+
 networks:
   service-network:
     driver: bridge

@@ -2,6 +2,7 @@ package hotels
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -11,9 +12,13 @@ import (
 	"time"
 
 	"microservices-travel-backend/internal/shared/api_provider/amadeus/hotels/models"
+
+	"github.com/redis/go-redis/v9"
 )
 
 const amadeusBaseURL = "https://test.api.amadeus.com"
+
+var ctx = context.Background()
 
 type TokenManager struct {
 	Token      string
@@ -27,9 +32,29 @@ type TokenManager struct {
 type AmadeusClient struct {
 	BaseURL      string
 	TokenManager *TokenManager
+	Cache        *redis.Client
 }
 
-func NewAmadeusClient(apiKey, secret string) *AmadeusClient {
+func NewAmadeusClient(apiKey, secret string, redisAddr string) *AmadeusClient {
+	// Ensure Redis address is formatted correctly
+	if strings.HasPrefix(redisAddr, "redis://") {
+		redisAddr = strings.TrimPrefix(redisAddr, "redis://")
+	}
+
+	redisClient := redis.NewClient(&redis.Options{
+		Addr:     redisAddr, // Correct format: "host:port"
+		Password: "",
+		DB:       0,
+	})
+
+	// Check Redis connection
+	_, err := redisClient.Ping(ctx).Result()
+	if err != nil {
+		fmt.Println("❌ Failed to connect to Redis:", err)
+	} else {
+		fmt.Println("✅ Successfully connected to Redis at", redisAddr)
+	}
+
 	return &AmadeusClient{
 		BaseURL: amadeusBaseURL,
 		TokenManager: &TokenManager{
@@ -37,6 +62,7 @@ func NewAmadeusClient(apiKey, secret string) *AmadeusClient {
 			APISecret:  secret,
 			HTTPClient: &http.Client{Timeout: 10 * time.Second},
 		},
+		Cache: redisClient,
 	}
 }
 
@@ -92,6 +118,19 @@ func (tm *TokenManager) fetchNewToken() (string, error) {
 }
 
 func (c *AmadeusClient) FetchHotelOffers(hotelIDs []string, adults int) ([]models.HotelOffer, error) {
+	cacheKey := fmt.Sprintf("hotel_offers:%s:adults:%d", strings.Join(hotelIDs, ","), adults)
+
+	cachedData, err := c.Cache.Get(ctx, cacheKey).Result()
+	if err == nil {
+		var offers []models.HotelOffer
+		if json.Unmarshal([]byte(cachedData), &offers) == nil {
+			fmt.Println("Cache hit: Returning data from Redis")
+			return offers, nil
+		}
+	}
+
+	fmt.Println("Cache miss: Fetching data from Amadeus API")
+
 	token, err := c.TokenManager.GetValidToken()
 	if err != nil {
 		return nil, fmt.Errorf("failed to retrieve Amadeus token: %w", err)
@@ -104,10 +143,27 @@ func (c *AmadeusClient) FetchHotelOffers(hotelIDs []string, adults int) ([]model
 		return nil, err
 	}
 
+	jsonData, _ := json.Marshal(result.Data)
+	c.Cache.Set(ctx, cacheKey, jsonData, 1*time.Minute)
+
 	return result.Data, nil
 }
 
 func (c *AmadeusClient) HotelSearch(cityCode string) ([]models.HotelData, error) {
+
+	cacheKey := fmt.Sprintf("hotel_search:%s", strings.ToUpper(cityCode))
+
+	cachedData, err := c.Cache.Get(ctx, cacheKey).Result()
+	if err == nil {
+		var hotels []models.HotelData
+		if json.Unmarshal([]byte(cachedData), &hotels) == nil {
+			fmt.Println("Cache hit: Returning data from Redis")
+			return hotels, nil
+		}
+	}
+
+	fmt.Println("Cache miss: Fetching data from Amadeus API")
+
 	token, err := c.TokenManager.GetValidToken()
 	if err != nil {
 		return nil, fmt.Errorf("failed to retrieve Amadeus token: %w", err)
@@ -119,6 +175,9 @@ func (c *AmadeusClient) HotelSearch(cityCode string) ([]models.HotelData, error)
 	if err := c.makeRequest("GET", url, token, nil, &result); err != nil {
 		return nil, err
 	}
+
+	jsonData, _ := json.Marshal(result.Data)
+	c.Cache.Set(ctx, cacheKey, jsonData, 10*time.Minute)
 
 	return result.Data, nil
 }

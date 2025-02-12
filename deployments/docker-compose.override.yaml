@@ -58,7 +58,7 @@ services:
     env_file:
       - ../config/shared/dev.env
       - ../config/user-service/dev.env
-  
+
   email-service:
     build:
       context: ../
@@ -117,6 +117,17 @@ services:
     networks:
       - service-network
 
+  redis:
+    image: redis:alpine
+    container_name: redis-dev
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    command: ["redis-server", "--save", "60", "1", "--loglevel", "warning"]
+
 volumes:
-  pgdata-dev: # Persistent volume for PostgreSQL dev environment
+  pgdata-dev:
   rabbitmq-data:
+  redis-data:

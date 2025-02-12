@@ -38,3 +38,19 @@ func (u *HotelUsecase) CreateHotelBooking(requestBody models.HotelBookingRequest
 	}
 	return booking, nil
 }
+
+func (u *HotelUsecase) FetchHotelRatings(hotelIDs []string) (*models.HotelSentimentResponse, error) {
+	ratings, err := u.service.FetchHotelRatings(hotelIDs)
+	if err != nil {
+		return nil, err
+	}
+	return ratings, nil
+}
+
+func (u *HotelUsecase) HotelNameAutoComplete(keyword string, subtype string) (*models.HotelNameResponse, error) {
+	hotels, err := u.service.HotelNameAutoComplete(keyword, subtype)
+	if err != nil {
+		return nil, err
+	}
+	return hotels, nil
+}

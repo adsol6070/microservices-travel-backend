@@ -197,6 +197,22 @@ func (c *AmadeusClient) CreateHotelBooking(requestBody models.HotelBookingReques
 	return &result, nil
 }
 
+func (c *AmadeusClient) FetchHotelRatings(hotelIDs []string) (*models.HotelSentimentResponse, error) {
+	token, err := c.TokenManager.GetValidToken()
+	if err != nil {
+		return nil, fmt.Errorf("failed to retrieve Amadeus token: %w", err)
+	}
+
+	url := fmt.Sprintf("%s/v2/e-reputation/hotel-sentiments?hotelIds=%s", c.BaseURL, strings.Join(hotelIDs, ","))
+
+	var result models.HotelSentimentResponse
+	if err := c.makeRequest("GET", url, token, nil, &result); err != nil {
+		return nil, err
+	}
+
+	return &result, nil
+}
+
 func (c *AmadeusClient) makeRequest(method, url, token string, body interface{}, result interface{}) error {
 	var requestBody io.Reader
 	if body != nil {
@@ -234,4 +250,20 @@ func (c *AmadeusClient) makeRequest(method, url, token string, body interface{},
 	}
 
 	return nil
+}
+
+func (c *AmadeusClient) HotelNameAutoComplete(keyword string, subType string) (*models.HotelNameResponse, error) {
+	token, err := c.TokenManager.GetValidToken()
+	if err != nil {
+		return nil, fmt.Errorf("failed to retrieve Amadeus token: %w", err)
+	}
+
+	url := fmt.Sprintf("%s/v1/reference-data/locations/hotel?keyword=%s&subType=%s", c.BaseURL, keyword, subType)
+
+	var result models.HotelNameResponse
+	if err := c.makeRequest("GET", url, token, nil, &result); err != nil {
+		return nil, err
+	}
+
+	return &result, nil
 }

@@ -38,3 +38,19 @@ func (a *AmadeusService) CreateHotelBooking(requestBody models.HotelBookingReque
 	}
 	return booking, nil
 }
+
+func (a *AmadeusService) FetchHotelRatings(hotelIDs []string) (*models.HotelSentimentResponse, error) {
+	ratings, err := a.client.FetchHotelRatings(hotelIDs)
+	if err != nil {
+		return nil, err
+	}
+	return ratings, nil
+}
+
+func (a *AmadeusService) HotelNameAutoComplete(keyword string, subtype string) (*models.HotelNameResponse, error) {
+	hotels, err := a.client.HotelNameAutoComplete(keyword, subtype)
+	if err != nil {
+		return nil, err
+	}
+	return hotels, nil
+}

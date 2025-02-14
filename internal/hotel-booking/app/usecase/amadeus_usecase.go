@@ -15,12 +15,28 @@ func NewHotelUsecase(service *amadeus.AmadeusService) *HotelUsecase {
 	}
 }
 
-func (u *HotelUsecase) SearchHotels(cityCode string) ([]models.HotelData, error) {
-	hotels, err := u.service.SearchHotels(cityCode)
+type SearchHotelsRequest struct {
+	CityCode     string `json:"cityCode"`
+	CheckInDate  string `json:"checkInDate"`
+	CheckOutDate string `json:"checkOutDate"`
+	Rooms        int    `json:"rooms"`
+	Persons      int    `json:"persons"`
+}
+
+func (u *HotelUsecase) SearchHotels(req SearchHotelsRequest) ([]models.HotelOffer, error) {
+	amadeusReq := amadeus.SearchHotelsRequest{
+		CityCode:     req.CityCode,
+		CheckInDate:  req.CheckInDate,
+		CheckOutDate: req.CheckOutDate,
+		Rooms:        req.Rooms,
+		Persons:      req.Persons,
+	}
+
+	hotelsWithOffer, err := u.service.SearchHotels(amadeusReq)
 	if err != nil {
 		return nil, err
 	}
-	return hotels, nil
+	return hotelsWithOffer, nil
 }
 
 func (u *HotelUsecase) FetchHotelOffers(hotelIDs []string, adults int) ([]models.HotelOffer, error) {

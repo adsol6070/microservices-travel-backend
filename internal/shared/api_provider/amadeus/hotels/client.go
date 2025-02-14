@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"strings"
 	"sync"
@@ -118,8 +119,33 @@ func (tm *TokenManager) fetchNewToken() (string, error) {
 }
 
 func (c *AmadeusClient) FetchHotelOffers(hotelIDs []string, adults int) ([]models.HotelOffer, error) {
+	const batchSize = 50
+	var allOffers []models.HotelOffer
+
+	for i := 0; i < len(hotelIDs); i += batchSize {
+		end := i + batchSize
+		if end > len(hotelIDs) {
+			end = len(hotelIDs)
+		}
+
+		batch := hotelIDs[i:end]
+		offers, err := c.fetchBatchHotelOffers(batch, adults)
+		if err != nil {
+			log.Printf("WARNING: Skipping failed batch %v: %v", batch, err)
+			continue
+		}
+
+		allOffers = append(allOffers, offers...)
+	}
+
+	return allOffers, nil
+}
+
+// Fetch offers for a batch of up to 50 hotel IDs
+func (c *AmadeusClient) fetchBatchHotelOffers(hotelIDs []string, adults int) ([]models.HotelOffer, error) {
 	cacheKey := fmt.Sprintf("hotel_offers:%s:adults:%d", strings.Join(hotelIDs, ","), adults)
 
+	// Try fetching from Redis cache first
 	cachedData, err := c.Cache.Get(ctx, cacheKey).Result()
 	if err == nil {
 		var offers []models.HotelOffer
@@ -136,13 +162,31 @@ func (c *AmadeusClient) FetchHotelOffers(hotelIDs []string, adults int) ([]model
 		return nil, fmt.Errorf("failed to retrieve Amadeus token: %w", err)
 	}
 
-	url := fmt.Sprintf("%s/v3/shopping/hotel-offers?hotelIds=%s&adults=%d", c.BaseURL, strings.Join(hotelIDs, ","), adults)
+	// Construct API request for up to 50 hotel IDs
+	url := fmt.Sprintf("%s/v3/shopping/hotel-offers?hotelIds=%s&adults=%d",
+		c.BaseURL, strings.Join(hotelIDs, ","), adults)
 
-	var result models.HotelOffersResponse
-	if err := c.makeRequest("GET", url, token, nil, &result); err != nil {
-		return nil, err
+	// Fetch raw response body
+	respBody, err := c.makeRequest("GET", url, token, nil)
+	if err != nil {
+		log.Printf("ERROR: Failed to fetch hotel offers: %v", err)
+		return nil, err // Return error if the request fails
 	}
 
+	// Parse the response
+	var result models.HotelOffersResponse
+	if err := json.Unmarshal(respBody, &result); err != nil {
+		log.Printf("ERROR: Failed to parse response JSON: %v", err)
+		return nil, err // Return error if JSON parsing fails
+	}
+
+	// ✅ Fix: Check if Data is empty instead of checking for a "Status" field
+	if len(result.Data) == 0 {
+		log.Printf("WARNING: API returned empty data for hotels: %v", hotelIDs)
+		return nil, fmt.Errorf("API returned empty data for the given hotels")
+	}
+
+	// Store in cache if we got any successful results
 	jsonData, _ := json.Marshal(result.Data)
 	c.Cache.Set(ctx, cacheKey, jsonData, 1*time.Minute)
 
@@ -150,9 +194,9 @@ func (c *AmadeusClient) FetchHotelOffers(hotelIDs []string, adults int) ([]model
 }
 
 func (c *AmadeusClient) HotelSearch(cityCode string) ([]models.HotelData, error) {
-
 	cacheKey := fmt.Sprintf("hotel_search:%s", strings.ToUpper(cityCode))
 
+	// Check cache
 	cachedData, err := c.Cache.Get(ctx, cacheKey).Result()
 	if err == nil {
 		var hotels []models.HotelData
@@ -164,18 +208,28 @@ func (c *AmadeusClient) HotelSearch(cityCode string) ([]models.HotelData, error)
 
 	fmt.Println("Cache miss: Fetching data from Amadeus API")
 
+	// Fetch token
 	token, err := c.TokenManager.GetValidToken()
 	if err != nil {
 		return nil, fmt.Errorf("failed to retrieve Amadeus token: %w", err)
 	}
 
+	// Prepare request URL
 	url := fmt.Sprintf("%s/v1/reference-data/locations/hotels/by-city?cityCode=%s", c.BaseURL, strings.ToUpper(cityCode))
 
-	var result models.HotelListResponse
-	if err := c.makeRequest("GET", url, token, nil, &result); err != nil {
+	// Make API request and get raw response
+	respBody, err := c.makeRequest("GET", url, token, nil)
+	if err != nil {
 		return nil, err
 	}
 
+	// Parse JSON response
+	var result models.HotelListResponse
+	if err := json.Unmarshal(respBody, &result); err != nil {
+		return nil, fmt.Errorf("failed to parse hotel search response: %w", err)
+	}
+
+	// Cache result
 	jsonData, _ := json.Marshal(result.Data)
 	c.Cache.Set(ctx, cacheKey, jsonData, 10*time.Minute)
 
@@ -183,86 +237,113 @@ func (c *AmadeusClient) HotelSearch(cityCode string) ([]models.HotelData, error)
 }
 
 func (c *AmadeusClient) CreateHotelBooking(requestBody models.HotelBookingRequest) (*models.HotelOrderResponse, error) {
+	// Get a valid Amadeus token
 	token, err := c.TokenManager.GetValidToken()
 	if err != nil {
 		return nil, fmt.Errorf("failed to retrieve Amadeus token: %w", err)
 	}
 
+	// Prepare API URL
 	url := fmt.Sprintf("%s/v2/booking/hotel-orders", c.BaseURL)
-	var result models.HotelOrderResponse
-	if err := c.makeRequest("POST", url, token, requestBody, &result); err != nil {
+
+	// Make API request and get raw response
+	respBody, err := c.makeRequest("POST", url, token, requestBody)
+	if err != nil {
 		return nil, err
+	}
+
+	// Parse JSON response
+	var result models.HotelOrderResponse
+	if err := json.Unmarshal(respBody, &result); err != nil {
+		return nil, fmt.Errorf("failed to parse hotel booking response: %w", err)
 	}
 
 	return &result, nil
 }
 
 func (c *AmadeusClient) FetchHotelRatings(hotelIDs []string) (*models.HotelSentimentResponse, error) {
+	// Get a valid Amadeus token
 	token, err := c.TokenManager.GetValidToken()
 	if err != nil {
 		return nil, fmt.Errorf("failed to retrieve Amadeus token: %w", err)
 	}
 
+	// Construct API URL with hotel IDs
 	url := fmt.Sprintf("%s/v2/e-reputation/hotel-sentiments?hotelIds=%s", c.BaseURL, strings.Join(hotelIDs, ","))
 
-	var result models.HotelSentimentResponse
-	if err := c.makeRequest("GET", url, token, nil, &result); err != nil {
+	// Make API request and get raw response
+	respBody, err := c.makeRequest("GET", url, token, nil)
+	if err != nil {
 		return nil, err
+	}
+
+	// Parse JSON response
+	var result models.HotelSentimentResponse
+	if err := json.Unmarshal(respBody, &result); err != nil {
+		return nil, fmt.Errorf("failed to parse hotel sentiment response: %w", err)
 	}
 
 	return &result, nil
 }
 
-func (c *AmadeusClient) makeRequest(method, url, token string, body interface{}, result interface{}) error {
+func (c *AmadeusClient) makeRequest(method, url, token string, body interface{}) ([]byte, error) {
 	var requestBody io.Reader
 	if body != nil {
 		jsonBody, err := json.Marshal(body)
 		if err != nil {
-			return fmt.Errorf("failed to marshal request body: %w", err)
+			return nil, fmt.Errorf("failed to marshal request body: %w", err)
 		}
 		requestBody = bytes.NewBuffer(jsonBody)
 	}
 
 	req, err := http.NewRequest(method, url, requestBody)
 	if err != nil {
-		return fmt.Errorf("failed to create request: %w", err)
+		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 	req.Header.Set("Authorization", "Bearer "+token)
 	req.Header.Set("Content-Type", "application/json")
 
 	resp, err := c.TokenManager.HTTPClient.Do(req)
 	if err != nil {
-		return fmt.Errorf("failed to execute request: %w", err)
+		return nil, fmt.Errorf("failed to execute request: %w", err)
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
-		return fmt.Errorf("request failed, status: %s", resp.Status)
-	}
-
+	// Read response body
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return fmt.Errorf("failed to read response body: %w", err)
+		return nil, fmt.Errorf("failed to read response body: %w", err)
 	}
 
-	if err := json.Unmarshal(respBody, result); err != nil {
-		return fmt.Errorf("failed to parse response JSON: %w", err)
+	// Check for non-successful responses
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
+		return nil, fmt.Errorf("request failed, status: %s, body: %s", resp.Status, string(respBody))
 	}
 
-	return nil
+	// Return raw response body to be processed outside
+	return respBody, nil
 }
 
 func (c *AmadeusClient) HotelNameAutoComplete(keyword string, subType string) (*models.HotelNameResponse, error) {
+	// Get a valid Amadeus token
 	token, err := c.TokenManager.GetValidToken()
 	if err != nil {
 		return nil, fmt.Errorf("failed to retrieve Amadeus token: %w", err)
 	}
 
+	// Construct API URL
 	url := fmt.Sprintf("%s/v1/reference-data/locations/hotel?keyword=%s&subType=%s", c.BaseURL, keyword, subType)
 
-	var result models.HotelNameResponse
-	if err := c.makeRequest("GET", url, token, nil, &result); err != nil {
+	// Make API request and get raw response
+	respBody, err := c.makeRequest("GET", url, token, nil)
+	if err != nil {
 		return nil, err
+	}
+
+	// Parse JSON response
+	var result models.HotelNameResponse
+	if err := json.Unmarshal(respBody, &result); err != nil {
+		return nil, fmt.Errorf("failed to parse hotel name response: %w", err)
 	}
 
 	return &result, nil

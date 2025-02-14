@@ -8,7 +8,7 @@ import (
 	"microservices-travel-backend/internal/shared/api_provider/amadeus/hotels"
 	"net/http"
 	"os"
-
+ 
 	"github.com/gorilla/mux"
 )
 

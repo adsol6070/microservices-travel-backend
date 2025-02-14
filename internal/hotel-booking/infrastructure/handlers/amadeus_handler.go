@@ -29,23 +29,62 @@ func NewHotelHandler(r *mux.Router, hotelUsecase *usecase.HotelUsecase) {
 	r.HandleFunc("/hotels/hotelnamecomplete", handler.HotelNameAutoComplete).Methods("GET")
 }
 
+// Define a struct for the request body
+type SearchHotelsRequest struct {
+	CityCode     string `json:"cityCode"`
+	CheckInDate  string `json:"checkInDate"`
+	CheckOutDate string `json:"checkOutDate"`
+	Rooms        int    `json:"rooms"`
+	Persons      int    `json:"persons"`
+}
+
 func (h *HotelHandler) SearchHotels(w http.ResponseWriter, r *http.Request) {
-	cityCode := r.URL.Query().Get("cityCode")
-	if cityCode == "" {
-		http.Error(w, "City code is required", http.StatusBadRequest)
+	log.Println("INFO: SearchHotels handler triggered")
+
+	var req SearchHotelsRequest
+	err := json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		log.Println("ERROR: Failed to decode request body -", err)
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
 
-	hotels, err := h.hotelUsecase.SearchHotels(cityCode)
+	log.Printf("INFO: Received hotel search request - CityCode: %s, CheckIn: %s, CheckOut: %s, Rooms: %d, Persons: %d",
+		req.CityCode, req.CheckInDate, req.CheckOutDate, req.Rooms, req.Persons)
+
+	// Input validation
+	if req.CityCode == "" || req.CheckInDate == "" || req.CheckOutDate == "" || req.Rooms <= 0 || req.Persons <= 0 {
+		log.Println("WARN: Invalid request parameters detected")
+		http.Error(w, "Missing or invalid fields", http.StatusBadRequest)
+		return
+	}
+
+	usecaseReq := usecase.SearchHotelsRequest{
+		CityCode:     req.CityCode,
+		CheckInDate:  req.CheckInDate,
+		CheckOutDate: req.CheckOutDate,
+		Rooms:        req.Rooms,
+		Persons:      req.Persons,
+	}
+
+	log.Println("INFO: Calling hotel usecase to fetch hotels with offers")
+
+	hotelsWithOffer, err := h.hotelUsecase.SearchHotels(usecaseReq)
 	if err != nil {
+		log.Println("ERROR: Error occurred while fetching hotel offers -", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
+	log.Printf("INFO: Successfully retrieved %d hotel offers", len(hotelsWithOffer))
+
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(hotels)
+	json.NewEncoder(w).Encode(hotelsWithOffer)
+
+	log.Println("INFO: SearchHotels response sent successfully")
 }
+
 
 func (h *HotelHandler) FetchHotelOffers(w http.ResponseWriter, r *http.Request) {
 	hotelIDsParam := r.URL.Query().Get("hotelIds")

@@ -5,7 +5,7 @@ import (
 	"io"
 	"log"
 	"microservices-travel-backend/internal/hotel-booking/app/usecase"
-	"microservices-travel-backend/internal/shared/api_provider/amadeus/hotels/models"
+	"microservices-travel-backend/internal/shared/api_provider/amadeus/hotels/amadeusHotelModels"
 	"net/http"
 	"strconv"
 	"strings"
@@ -22,7 +22,7 @@ func NewHotelHandler(r *mux.Router, hotelUsecase *usecase.HotelUsecase) {
 		hotelUsecase: hotelUsecase,
 	}
 
-	r.HandleFunc("/hotels/search", handler.SearchHotels).Methods("GET")
+	r.HandleFunc("/hotels/search", handler.SearchHotels).Methods("POST")
 	r.HandleFunc("/hotels/offers", handler.FetchHotelOffers).Methods("GET")
 	r.HandleFunc("/hotels/book", handler.CreateHotelBooking).Methods("POST")
 	r.HandleFunc("/hotels/ratings", handler.FetchHotelRatings).Methods("GET")
@@ -52,7 +52,6 @@ func (h *HotelHandler) SearchHotels(w http.ResponseWriter, r *http.Request) {
 	log.Printf("INFO: Received hotel search request - CityCode: %s, CheckIn: %s, CheckOut: %s, Rooms: %d, Persons: %d",
 		req.CityCode, req.CheckInDate, req.CheckOutDate, req.Rooms, req.Persons)
 
-	// Input validation
 	if req.CityCode == "" || req.CheckInDate == "" || req.CheckOutDate == "" || req.Rooms <= 0 || req.Persons <= 0 {
 		log.Println("WARN: Invalid request parameters detected")
 		http.Error(w, "Missing or invalid fields", http.StatusBadRequest)
@@ -76,15 +75,10 @@ func (h *HotelHandler) SearchHotels(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Printf("INFO: Successfully retrieved %d hotel offers", len(hotelsWithOffer))
-
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(hotelsWithOffer)
-
-	log.Println("INFO: SearchHotels response sent successfully")
 }
-
 
 func (h *HotelHandler) FetchHotelOffers(w http.ResponseWriter, r *http.Request) {
 	hotelIDsParam := r.URL.Query().Get("hotelIds")
@@ -121,7 +115,7 @@ func (h *HotelHandler) CreateHotelBooking(w http.ResponseWriter, r *http.Request
 	}
 	defer r.Body.Close()
 
-	var bookingRequest models.HotelBookingRequest
+	var bookingRequest amadeusHotelModels.HotelBookingRequest
 	err = json.Unmarshal(requestBody, &bookingRequest)
 	if err != nil {
 		http.Error(w, "Invalid request format", http.StatusBadRequest)

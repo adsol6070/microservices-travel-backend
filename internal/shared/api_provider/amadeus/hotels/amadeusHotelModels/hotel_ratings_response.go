@@ -1,4 +1,4 @@
-package models
+package amadeusHotelModels
 
 type HotelSentimentResponse struct {
 	Meta     MetaResponse         `json:"meta"`

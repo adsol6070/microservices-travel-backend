@@ -1,4 +1,4 @@
-package models
+package googlePlaceModels
 
 type PlacesResponse struct {
 	Places []Place `json:"places"`
@@ -8,6 +8,7 @@ type Place struct {
 	ID          string      `json:"id"`
 	DisplayName DisplayName `json:"displayName"`
 	Photos      []Photo     `json:"photos"`
+	Rating      float64     `json:"rating,omitempty"`
 }
 
 type DisplayName struct {

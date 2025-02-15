@@ -6,7 +6,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"microservices-travel-backend/internal/shared/api_provider/google/places/models"
+	"log"
+	"microservices-travel-backend/internal/shared/api_provider/google/places/googlePlaceModels"
 	"net/http"
 	"strings"
 	"sync"
@@ -95,12 +96,12 @@ func (c *PlacesClient) makeRequest(method, url string, body interface{}, headers
 	return nil
 }
 
-func (pc *PlacesClient) GetPlacePhoto(placeID, photoID string, maxHeight, maxWidth int) (*models.PhotoResponse, error) {
-	cacheKey := fmt.Sprintf("place_photo:%s:%s", placeID, photoID)
+func (pc *PlacesClient) GetPlacePhoto(photoName string, maxHeight, maxWidth int) (*googlePlaceModels.PhotoResponse, error) {
+	cacheKey := fmt.Sprintf("place_photo:%s", photoName)
 
 	cachedData, err := pc.Cache.Get(ctx, cacheKey).Result()
 	if err == nil {
-		var result models.PhotoResponse
+		var result googlePlaceModels.PhotoResponse
 		if json.Unmarshal([]byte(cachedData), &result) == nil {
 			fmt.Println("Cache hit: Returning data from Redis")
 			return &result, nil
@@ -109,10 +110,13 @@ func (pc *PlacesClient) GetPlacePhoto(placeID, photoID string, maxHeight, maxWid
 
 	fmt.Println("Cache miss: Fetching photo from Google Places API")
 
-	url := fmt.Sprintf("%s/places/%s/photos/%s/media?key=%s&maxHeightPx=%d&maxWidthPx=%d&skipHttpRedirect=true",
-		pc.BaseURL, placeID, photoID, pc.APIKey, maxHeight, maxWidth)
+	url := fmt.Sprintf("%s/%s/media?key=%s&maxHeightPx=%d&maxWidthPx=%d&skipHttpRedirect=true",
+		pc.BaseURL, photoName, pc.APIKey, maxHeight, maxWidth)
 
-	var result models.PhotoResponse
+	// Log the constructed URL for debugging
+	log.Println("[DEBUG] Google Places API Photo Request URL:", url)
+
+	var result googlePlaceModels.PhotoResponse
 	if err := pc.makeRequest("GET", url, nil, nil, &result); err != nil {
 		return nil, err
 	}
@@ -123,20 +127,29 @@ func (pc *PlacesClient) GetPlacePhoto(placeID, photoID string, maxHeight, maxWid
 	return &result, nil
 }
 
-func (pc *PlacesClient) SearchPlaces(requestBody models.TextQueryRequest, fieldMask string) (*models.PlacesResponse, error) {
-	cacheKey := fmt.Sprintf("place_search:%s", requestBody)
+func (pc *PlacesClient) SearchPlaces(requestBody googlePlaceModels.TextQueryRequest, fieldMask string) (*googlePlaceModels.PlacesResponse, error) {
+
+	// Convert requestBody to JSON for logging
+	requestBodyJSON, _ := json.Marshal(requestBody)
+
+	cacheKey := fmt.Sprintf("place_search:%s", requestBodyJSON)
 
 	// Attempt to retrieve cached data
 	cachedData, err := pc.Cache.Get(ctx, cacheKey).Result()
 	if err == nil {
-		var result models.PlacesResponse
+		var result googlePlaceModels.PlacesResponse
 		if json.Unmarshal([]byte(cachedData), &result) == nil {
-			fmt.Println("Cache hit: Returning data from Redis")
+			log.Println("DEBUG: Cache hit - Returning data from Redis")
+
+			// Log cached result
+			cachedResultJSON, _ := json.Marshal(result)
+			log.Println("DEBUG: Cached API Response:", string(cachedResultJSON))
+
 			return &result, nil
 		}
 	}
 
-	fmt.Println("Cache miss: Fetching data from Google Places API")
+	log.Println("DEBUG: Cache miss - Fetching data from Google Places API")
 
 	// Define API URL
 	url := fmt.Sprintf("%s/places:searchText", pc.BaseURL)
@@ -145,8 +158,9 @@ func (pc *PlacesClient) SearchPlaces(requestBody models.TextQueryRequest, fieldM
 		"X-Goog-FieldMask": fieldMask,
 	}
 
-	var result models.PlacesResponse
+	var result googlePlaceModels.PlacesResponse
 	if err := pc.makeRequest("POST", url, requestBody, headers, &result); err != nil {
+		log.Println("ERROR: Failed to fetch places -", err)
 		return nil, fmt.Errorf("failed to fetch places: %w", err)
 	}
 
@@ -157,13 +171,13 @@ func (pc *PlacesClient) SearchPlaces(requestBody models.TextQueryRequest, fieldM
 	return &result, nil
 }
 
-func (pc *PlacesClient) GetPlaceDetails(placeID, fieldMask string) (*models.PlaceDetailsResponse, error) {
+func (pc *PlacesClient) GetPlaceDetails(placeID, fieldMask string) (*googlePlaceModels.PlaceDetailsResponse, error) {
 	cacheKey := fmt.Sprintf("place_details:%s", placeID)
 
 	// Attempt to retrieve cached data
 	cachedData, err := pc.Cache.Get(ctx, cacheKey).Result()
 	if err == nil {
-		var result models.PlaceDetailsResponse
+		var result googlePlaceModels.PlaceDetailsResponse
 		if json.Unmarshal([]byte(cachedData), &result) == nil {
 			fmt.Println("Cache hit: Returning data from Redis")
 			return &result, nil
@@ -179,7 +193,7 @@ func (pc *PlacesClient) GetPlaceDetails(placeID, fieldMask string) (*models.Plac
 		"X-Goog-FieldMask": fieldMask,
 	}
 
-	var result models.PlaceDetailsResponse
+	var result googlePlaceModels.PlaceDetailsResponse
 	if err := pc.makeRequest("GET", url, nil, headers, &result); err != nil {
 		return nil, fmt.Errorf("failed to fetch place details: %w", err)
 	}

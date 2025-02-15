@@ -1,4 +1,4 @@
-package models
+package amadeusHotelModels
 
 // HotelOrderResponse represents the overall response structure.
 type HotelOrderResponse struct {

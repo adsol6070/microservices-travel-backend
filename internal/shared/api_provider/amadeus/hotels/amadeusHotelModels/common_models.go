@@ -1,4 +1,4 @@
-package models
+package amadeusHotelModels
 
 type Guests struct {
 	Adults int `json:"adults"`

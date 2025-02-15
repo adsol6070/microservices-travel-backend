@@ -1,4 +1,4 @@
-package models
+package googlePlaceModels
 
 type PlaceDetailsResponse struct {
 	Name                     string               `json:"name"`

@@ -2,7 +2,7 @@ package google
 
 import (
 	"microservices-travel-backend/internal/shared/api_provider/google/places"
-	"microservices-travel-backend/internal/shared/api_provider/google/places/models"
+	"microservices-travel-backend/internal/shared/api_provider/google/places/googlePlaceModels"
 )
 
 type GooglePlacesService struct {
@@ -15,7 +15,7 @@ func NewGooglePlacesService(client *places.PlacesClient) *GooglePlacesService {
 	}
 }
 
-func (g *GooglePlacesService) SearchPlaces(requestBody models.TextQueryRequest) (*models.PlacesResponse, error) {
+func (g *GooglePlacesService) SearchPlaces(requestBody googlePlaceModels.TextQueryRequest) (*googlePlaceModels.PlacesResponse, error) {
 	places, err := g.client.SearchPlaces(requestBody, "places.displayName,places.id,places.photos")
 	if err != nil {
 		return nil, err
@@ -23,15 +23,15 @@ func (g *GooglePlacesService) SearchPlaces(requestBody models.TextQueryRequest) 
 	return places, nil
 }
 
-func (g *GooglePlacesService) GetPlacePhoto(placeID, photoID string, maxHeight, maxWidth int) (*models.PhotoResponse, error) {
-	placesPhotos, err := g.client.GetPlacePhoto(placeID, photoID, maxHeight, maxWidth)
+func (g *GooglePlacesService) GetPlacePhoto(photoName string, maxHeight, maxWidth int) (*googlePlaceModels.PhotoResponse, error) {
+	placesPhotos, err := g.client.GetPlacePhoto(photoName, maxHeight, maxWidth)
 	if err != nil {
 		return nil, err
 	}
 	return placesPhotos, nil
 }
 
-func (g *GooglePlacesService) GetPlaceDetail(placeID string) (*models.PlaceDetailsResponse, error) {
+func (g *GooglePlacesService) GetPlaceDetail(placeID string) (*googlePlaceModels.PlaceDetailsResponse, error) {
 
 	placeDetail, err := g.client.GetPlaceDetails(placeID, "*")
 	if err != nil {

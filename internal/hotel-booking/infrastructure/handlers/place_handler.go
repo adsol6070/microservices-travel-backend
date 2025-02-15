@@ -3,7 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"microservices-travel-backend/internal/hotel-booking/app/usecase"
-	"microservices-travel-backend/internal/shared/api_provider/google/places/models"
+	"microservices-travel-backend/internal/shared/api_provider/google/places/googlePlaceModels"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -25,7 +25,7 @@ func NewPlaceHandler(r *mux.Router, placeUsecase *usecase.GooglePlacesUsecase) {
 
 func (h *PlaceHandler) SearchPlaces(w http.ResponseWriter, r *http.Request) {
 	// Decode the JSON request body
-	var req models.TextQueryRequest
+	var req googlePlaceModels.TextQueryRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
@@ -52,13 +52,13 @@ func (h *PlaceHandler) SearchPlaces(w http.ResponseWriter, r *http.Request) {
 
 func (h *PlaceHandler) GetPlacePhoto(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	placeID := vars["placeID"]
-	photoID := vars["photoID"]
+	// placeID := vars["placeID"]
+	photoName := vars["photoName"]
 
 	maxHeight := 400 // Default max height
 	maxWidth := 400  // Default max width
 
-	photo, err := h.placeUsecase.GetPlacePhoto(placeID, photoID, maxHeight, maxWidth)
+	photo, err := h.placeUsecase.GetPlacePhoto(photoName, maxHeight, maxWidth)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

@@ -12,7 +12,7 @@ import (
 	"sync"
 	"time"
 
-	"microservices-travel-backend/internal/shared/api_provider/amadeus/hotels/models"
+	"microservices-travel-backend/internal/shared/api_provider/amadeus/hotels/amadeusHotelModels"
 
 	"github.com/redis/go-redis/v9"
 )
@@ -118,9 +118,9 @@ func (tm *TokenManager) fetchNewToken() (string, error) {
 	return tm.Token, nil
 }
 
-func (c *AmadeusClient) FetchHotelOffers(hotelIDs []string, adults int) ([]models.HotelOffer, error) {
+func (c *AmadeusClient) FetchHotelOffers(hotelIDs []string, adults int) ([]amadeusHotelModels.HotelOffer, error) {
 	const batchSize = 50
-	var allOffers []models.HotelOffer
+	var allOffers []amadeusHotelModels.HotelOffer
 
 	for i := 0; i < len(hotelIDs); i += batchSize {
 		end := i + batchSize
@@ -142,13 +142,13 @@ func (c *AmadeusClient) FetchHotelOffers(hotelIDs []string, adults int) ([]model
 }
 
 // Fetch offers for a batch of up to 50 hotel IDs
-func (c *AmadeusClient) fetchBatchHotelOffers(hotelIDs []string, adults int) ([]models.HotelOffer, error) {
+func (c *AmadeusClient) fetchBatchHotelOffers(hotelIDs []string, adults int) ([]amadeusHotelModels.HotelOffer, error) {
 	cacheKey := fmt.Sprintf("hotel_offers:%s:adults:%d", strings.Join(hotelIDs, ","), adults)
 
 	// Try fetching from Redis cache first
 	cachedData, err := c.Cache.Get(ctx, cacheKey).Result()
 	if err == nil {
-		var offers []models.HotelOffer
+		var offers []amadeusHotelModels.HotelOffer
 		if json.Unmarshal([]byte(cachedData), &offers) == nil {
 			fmt.Println("Cache hit: Returning data from Redis")
 			return offers, nil
@@ -174,7 +174,7 @@ func (c *AmadeusClient) fetchBatchHotelOffers(hotelIDs []string, adults int) ([]
 	}
 
 	// Parse the response
-	var result models.HotelOffersResponse
+	var result amadeusHotelModels.HotelOffersResponse
 	if err := json.Unmarshal(respBody, &result); err != nil {
 		log.Printf("ERROR: Failed to parse response JSON: %v", err)
 		return nil, err // Return error if JSON parsing fails
@@ -193,13 +193,13 @@ func (c *AmadeusClient) fetchBatchHotelOffers(hotelIDs []string, adults int) ([]
 	return result.Data, nil
 }
 
-func (c *AmadeusClient) HotelSearch(cityCode string) ([]models.HotelData, error) {
+func (c *AmadeusClient) HotelSearch(cityCode string) ([]amadeusHotelModels.HotelData, error) {
 	cacheKey := fmt.Sprintf("hotel_search:%s", strings.ToUpper(cityCode))
 
 	// Check cache
 	cachedData, err := c.Cache.Get(ctx, cacheKey).Result()
 	if err == nil {
-		var hotels []models.HotelData
+		var hotels []amadeusHotelModels.HotelData
 		if json.Unmarshal([]byte(cachedData), &hotels) == nil {
 			fmt.Println("Cache hit: Returning data from Redis")
 			return hotels, nil
@@ -224,7 +224,7 @@ func (c *AmadeusClient) HotelSearch(cityCode string) ([]models.HotelData, error)
 	}
 
 	// Parse JSON response
-	var result models.HotelListResponse
+	var result amadeusHotelModels.HotelListResponse
 	if err := json.Unmarshal(respBody, &result); err != nil {
 		return nil, fmt.Errorf("failed to parse hotel search response: %w", err)
 	}
@@ -236,7 +236,7 @@ func (c *AmadeusClient) HotelSearch(cityCode string) ([]models.HotelData, error)
 	return result.Data, nil
 }
 
-func (c *AmadeusClient) CreateHotelBooking(requestBody models.HotelBookingRequest) (*models.HotelOrderResponse, error) {
+func (c *AmadeusClient) CreateHotelBooking(requestBody amadeusHotelModels.HotelBookingRequest) (*amadeusHotelModels.HotelOrderResponse, error) {
 	// Get a valid Amadeus token
 	token, err := c.TokenManager.GetValidToken()
 	if err != nil {
@@ -253,7 +253,7 @@ func (c *AmadeusClient) CreateHotelBooking(requestBody models.HotelBookingReques
 	}
 
 	// Parse JSON response
-	var result models.HotelOrderResponse
+	var result amadeusHotelModels.HotelOrderResponse
 	if err := json.Unmarshal(respBody, &result); err != nil {
 		return nil, fmt.Errorf("failed to parse hotel booking response: %w", err)
 	}
@@ -261,7 +261,7 @@ func (c *AmadeusClient) CreateHotelBooking(requestBody models.HotelBookingReques
 	return &result, nil
 }
 
-func (c *AmadeusClient) FetchHotelRatings(hotelIDs []string) (*models.HotelSentimentResponse, error) {
+func (c *AmadeusClient) FetchHotelRatings(hotelIDs []string) (*amadeusHotelModels.HotelSentimentResponse, error) {
 	// Get a valid Amadeus token
 	token, err := c.TokenManager.GetValidToken()
 	if err != nil {
@@ -278,7 +278,7 @@ func (c *AmadeusClient) FetchHotelRatings(hotelIDs []string) (*models.HotelSenti
 	}
 
 	// Parse JSON response
-	var result models.HotelSentimentResponse
+	var result amadeusHotelModels.HotelSentimentResponse
 	if err := json.Unmarshal(respBody, &result); err != nil {
 		return nil, fmt.Errorf("failed to parse hotel sentiment response: %w", err)
 	}
@@ -324,7 +324,7 @@ func (c *AmadeusClient) makeRequest(method, url, token string, body interface{})
 	return respBody, nil
 }
 
-func (c *AmadeusClient) HotelNameAutoComplete(keyword string, subType string) (*models.HotelNameResponse, error) {
+func (c *AmadeusClient) HotelNameAutoComplete(keyword string, subType string) (*amadeusHotelModels.HotelNameResponse, error) {
 	// Get a valid Amadeus token
 	token, err := c.TokenManager.GetValidToken()
 	if err != nil {
@@ -341,7 +341,7 @@ func (c *AmadeusClient) HotelNameAutoComplete(keyword string, subType string) (*
 	}
 
 	// Parse JSON response
-	var result models.HotelNameResponse
+	var result amadeusHotelModels.HotelNameResponse
 	if err := json.Unmarshal(respBody, &result); err != nil {
 		return nil, fmt.Errorf("failed to parse hotel name response: %w", err)
 	}

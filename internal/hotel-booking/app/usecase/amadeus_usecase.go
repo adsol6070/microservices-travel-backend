@@ -2,7 +2,8 @@ package usecase
 
 import (
 	"microservices-travel-backend/internal/hotel-booking/domain/amadeus"
-	"microservices-travel-backend/internal/shared/api_provider/amadeus/hotels/models"
+	"microservices-travel-backend/internal/hotel-booking/domain/models"
+	"microservices-travel-backend/internal/shared/api_provider/amadeus/hotels/amadeusHotelModels"
 )
 
 type HotelUsecase struct {
@@ -23,7 +24,7 @@ type SearchHotelsRequest struct {
 	Persons      int    `json:"persons"`
 }
 
-func (u *HotelUsecase) SearchHotels(req SearchHotelsRequest) ([]models.HotelOffer, error) {
+func (u *HotelUsecase) SearchHotels(req SearchHotelsRequest) ([]models.EnrichedHotelOffer, error) {
 	amadeusReq := amadeus.SearchHotelsRequest{
 		CityCode:     req.CityCode,
 		CheckInDate:  req.CheckInDate,
@@ -39,7 +40,7 @@ func (u *HotelUsecase) SearchHotels(req SearchHotelsRequest) ([]models.HotelOffe
 	return hotelsWithOffer, nil
 }
 
-func (u *HotelUsecase) FetchHotelOffers(hotelIDs []string, adults int) ([]models.HotelOffer, error) {
+func (u *HotelUsecase) FetchHotelOffers(hotelIDs []string, adults int) ([]amadeusHotelModels.HotelOffer, error) {
 	offers, err := u.service.FetchHotelOffers(hotelIDs, adults)
 	if err != nil {
 		return nil, err
@@ -47,7 +48,7 @@ func (u *HotelUsecase) FetchHotelOffers(hotelIDs []string, adults int) ([]models
 	return offers, nil
 }
 
-func (u *HotelUsecase) CreateHotelBooking(requestBody models.HotelBookingRequest) (*models.HotelOrderResponse, error) {
+func (u *HotelUsecase) CreateHotelBooking(requestBody amadeusHotelModels.HotelBookingRequest) (*amadeusHotelModels.HotelOrderResponse, error) {
 	booking, err := u.service.CreateHotelBooking(requestBody)
 	if err != nil {
 		return nil, err
@@ -55,7 +56,7 @@ func (u *HotelUsecase) CreateHotelBooking(requestBody models.HotelBookingRequest
 	return booking, nil
 }
 
-func (u *HotelUsecase) FetchHotelRatings(hotelIDs []string) (*models.HotelSentimentResponse, error) {
+func (u *HotelUsecase) FetchHotelRatings(hotelIDs []string) (*amadeusHotelModels.HotelSentimentResponse, error) {
 	ratings, err := u.service.FetchHotelRatings(hotelIDs)
 	if err != nil {
 		return nil, err
@@ -63,7 +64,7 @@ func (u *HotelUsecase) FetchHotelRatings(hotelIDs []string) (*models.HotelSentim
 	return ratings, nil
 }
 
-func (u *HotelUsecase) HotelNameAutoComplete(keyword string, subtype string) (*models.HotelNameResponse, error) {
+func (u *HotelUsecase) HotelNameAutoComplete(keyword string, subtype string) (*amadeusHotelModels.HotelNameResponse, error) {
 	hotels, err := u.service.HotelNameAutoComplete(keyword, subtype)
 	if err != nil {
 		return nil, err

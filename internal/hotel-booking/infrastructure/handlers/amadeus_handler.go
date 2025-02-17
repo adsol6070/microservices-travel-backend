@@ -6,6 +6,8 @@ import (
 	"log"
 	"microservices-travel-backend/internal/hotel-booking/app/usecase"
 	"microservices-travel-backend/internal/shared/api_provider/amadeus/hotels/amadeusHotelModels"
+	"microservices-travel-backend/pkg/response"
+	validator "microservices-travel-backend/pkg/validation"
 	"net/http"
 	"strconv"
 	"strings"
@@ -31,30 +33,26 @@ func NewHotelHandler(r *mux.Router, hotelUsecase *usecase.HotelUsecase) {
 
 // Define a struct for the request body
 type SearchHotelsRequest struct {
-	CityCode     string `json:"cityCode"`
-	CheckInDate  string `json:"checkInDate"`
-	CheckOutDate string `json:"checkOutDate"`
-	Rooms        int    `json:"rooms"`
-	Persons      int    `json:"persons"`
+	CityCode     string `json:"cityCode" validate:"required,len=3"`
+	CheckInDate  string `json:"checkInDate" validate:"required"`
+	CheckOutDate string `json:"checkOutDate" validate:"required"`
+	Rooms        int    `json:"rooms" validate:"required,min=1"`
+	Persons      int    `json:"persons" validate:"required,min=1"`
 }
 
 func (h *HotelHandler) SearchHotels(w http.ResponseWriter, r *http.Request) {
-	log.Println("INFO: SearchHotels handler triggered")
-
 	var req SearchHotelsRequest
+
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
 		log.Println("ERROR: Failed to decode request body -", err)
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		response.BadRequest(w, "Invalid request body")
 		return
 	}
 
-	log.Printf("INFO: Received hotel search request - CityCode: %s, CheckIn: %s, CheckOut: %s, Rooms: %d, Persons: %d",
-		req.CityCode, req.CheckInDate, req.CheckOutDate, req.Rooms, req.Persons)
-
-	if req.CityCode == "" || req.CheckInDate == "" || req.CheckOutDate == "" || req.Rooms <= 0 || req.Persons <= 0 {
-		log.Println("WARN: Invalid request parameters detected")
-		http.Error(w, "Missing or invalid fields", http.StatusBadRequest)
+	if err := validator.ValidateStruct(req); err != nil {
+		log.Println("ERROR: Validation failed -", err)
+		response.BadRequest(w, err.Error())
 		return
 	}
 
@@ -66,18 +64,14 @@ func (h *HotelHandler) SearchHotels(w http.ResponseWriter, r *http.Request) {
 		Persons:      req.Persons,
 	}
 
-	log.Println("INFO: Calling hotel usecase to fetch hotels with offers")
-
 	hotelsWithOffer, err := h.hotelUsecase.SearchHotels(usecaseReq)
 	if err != nil {
 		log.Println("ERROR: Error occurred while fetching hotel offers -", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		response.InternalServerError(w, "Failed to fetch hotel offers")
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(hotelsWithOffer)
+	response.Success(w, http.StatusOK, "Hotels fetched successfully", hotelsWithOffer)
 }
 
 func (h *HotelHandler) FetchHotelOffers(w http.ResponseWriter, r *http.Request) {
@@ -85,14 +79,14 @@ func (h *HotelHandler) FetchHotelOffers(w http.ResponseWriter, r *http.Request) 
 	adultsParam := r.URL.Query().Get("adults")
 
 	if hotelIDsParam == "" || adultsParam == "" {
-		http.Error(w, "hotelIds and adults parameters are required", http.StatusBadRequest)
+		response.BadRequest(w, "hotelIds and adults parameters are required")
 		return
 	}
 
 	hotelIDs := strings.Split(hotelIDsParam, ",")
 	adults, err := strconv.Atoi(adultsParam)
 	if err != nil || adults <= 0 {
-		http.Error(w, "Invalid value for adults", http.StatusBadRequest)
+		response.BadRequest(w, "Invalid value for adults")
 		return
 	}
 
@@ -102,15 +96,13 @@ func (h *HotelHandler) FetchHotelOffers(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(offers)
+	response.Success(w, http.StatusOK, "Hotel offers retrieved successfully", offers)
 }
 
 func (h *HotelHandler) CreateHotelBooking(w http.ResponseWriter, r *http.Request) {
 	requestBody, err := io.ReadAll(r.Body)
 	if err != nil {
-		http.Error(w, "Failed to read request body", http.StatusBadRequest)
+		response.BadRequest(w, "Failed to read request body")
 		return
 	}
 	defer r.Body.Close()
@@ -118,19 +110,18 @@ func (h *HotelHandler) CreateHotelBooking(w http.ResponseWriter, r *http.Request
 	var bookingRequest amadeusHotelModels.HotelBookingRequest
 	err = json.Unmarshal(requestBody, &bookingRequest)
 	if err != nil {
-		http.Error(w, "Invalid request format", http.StatusBadRequest)
+		response.BadRequest(w, "Invalid request format")
 		return
 	}
 
 	bookingResponse, err := h.hotelUsecase.CreateHotelBooking(bookingRequest)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		log.Println("ERROR: Failed to create hotel booking -", err)
+		response.InternalServerError(w, "Failed to create hotel booking")
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(bookingResponse)
+	response.Success(w, http.StatusCreated, "Hotel booking created successfully", bookingResponse)
 }
 
 func (h *HotelHandler) FetchHotelRatings(w http.ResponseWriter, r *http.Request) {
@@ -138,21 +129,19 @@ func (h *HotelHandler) FetchHotelRatings(w http.ResponseWriter, r *http.Request)
 	log.Println(hotelIDsParam)
 
 	if hotelIDsParam == "" {
-		http.Error(w, "hotelIds parameter are required", http.StatusBadRequest)
+		response.BadRequest(w, "hotelIds parameter is required")
 		return
 	}
 
 	hotelIDs := strings.Split(hotelIDsParam, ",")
-
-	offers, err := h.hotelUsecase.FetchHotelRatings(hotelIDs)
+	ratings, err := h.hotelUsecase.FetchHotelRatings(hotelIDs)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		log.Println("ERROR: Failed to fetch hotel ratings -", err)
+		response.InternalServerError(w, "Failed to fetch hotel ratings")
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(offers)
+	response.Success(w, http.StatusOK, "Hotel ratings fetched successfully", ratings)
 }
 
 func (h *HotelHandler) HotelNameAutoComplete(w http.ResponseWriter, r *http.Request) {
@@ -160,17 +149,16 @@ func (h *HotelHandler) HotelNameAutoComplete(w http.ResponseWriter, r *http.Requ
 	subtype := r.URL.Query().Get("subType")
 
 	if keyword == "" || subtype == "" {
-		http.Error(w, "keyword and subtype parameters are required", http.StatusBadRequest)
+		response.BadRequest(w, "keyword and subtype parameters are required")
 		return
 	}
 
-	offers, err := h.hotelUsecase.HotelNameAutoComplete(keyword, subtype)
+	suggestions, err := h.hotelUsecase.HotelNameAutoComplete(keyword, subtype)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		log.Println("ERROR: Failed to fetch hotel name suggestions -", err)
+		response.InternalServerError(w, "Failed to fetch hotel name suggestions")
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(offers)
+	response.Success(w, http.StatusOK, "Hotel name suggestions retrieved", suggestions)
 }

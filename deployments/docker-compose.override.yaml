@@ -12,6 +12,9 @@ services:
       - ../internal/hotel-booking:/hotel-booking-service/internal/hotel-booking
       - ../internal/shared:/hotel-booking-service/internal/shared
       - ../pkg/middlewares:/hotel-booking-service/pkg/middlewares
+      - ../pkg/logger:/hotel-booking-service/pkg/logger
+      - ../pkg/response:/hotel-booking-service/pkg/response
+      - ../pkg/validation:/hotel-booking-service/pkg/validation
     ports:
       - "5100:5100"
     command: ["bin/air", "-c", "/hotel-booking-service/.air.toml"]

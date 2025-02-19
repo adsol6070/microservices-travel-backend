@@ -83,7 +83,7 @@ stop: ## Stop the Kubernetes cluster (Minikube or Kind)
 
 ## Run Docker Compose (for local testing)
 docker-compose-up: ## Start local services using Docker Compose
-	docker-compose -f $(DOCKER_COMPOSE) -f $(DOCKER_COMPOSE_OVERRIDE) up -d
+	docker-compose -f $(DOCKER_COMPOSE) -f $(DOCKER_COMPOSE_OVERRIDE) up --build -d
 
 docker-compose-down: ## Stop services using Docker Compose
 	docker-compose -f $(DOCKER_COMPOSE) -f $(DOCKER_COMPOSE_OVERRIDE) down	

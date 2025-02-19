@@ -1,6 +1,8 @@
 package usecase
 
 import (
+	"microservices-travel-backend/internal/hotel-booking/app/dto/request"
+	"microservices-travel-backend/internal/hotel-booking/app/dto/response"
 	"microservices-travel-backend/internal/hotel-booking/domain/amadeus"
 	"microservices-travel-backend/internal/hotel-booking/domain/models"
 	"microservices-travel-backend/internal/shared/api_provider/amadeus/hotels/amadeusHotelModels"
@@ -16,28 +18,20 @@ func NewHotelUsecase(service *amadeus.AmadeusService) *HotelUsecase {
 	}
 }
 
-type SearchHotelsRequest struct {
-	CityCode     string `json:"cityCode"`
-	CheckInDate  string `json:"checkInDate"`
-	CheckOutDate string `json:"checkOutDate"`
-	Rooms        int    `json:"rooms"`
-	Persons      int    `json:"persons"`
-}
-
-func (u *HotelUsecase) SearchHotels(req SearchHotelsRequest) ([]models.EnrichedHotelOffer, error) {
-	amadeusReq := amadeus.SearchHotelsRequest{
-		CityCode:     req.CityCode,
-		CheckInDate:  req.CheckInDate,
-		CheckOutDate: req.CheckOutDate,
-		Rooms:        req.Rooms,
-		Persons:      req.Persons,
-	}
-
-	hotelsWithOffer, err := u.service.SearchHotels(amadeusReq)
+func (u *HotelUsecase) SearchHotels(req request.HotelSearchRequest) ([]models.EnrichedHotelOffer, error) {
+	hotelsWithOffer, err := u.service.SearchHotels(req)
 	if err != nil {
 		return nil, err
 	}
 	return hotelsWithOffer, nil
+}
+
+func (u *HotelUsecase) HotelDetails(req request.HotelDetailsRequest) ([]response.HotelDetails, error) {
+	hotelDetails, err := u.service.HotelDetails(req)
+	if err != nil {
+		return nil, err
+	}
+	return hotelDetails, nil
 }
 
 func (u *HotelUsecase) FetchHotelOffers(hotelIDs []string, adults int) ([]amadeusHotelModels.HotelOffer, error) {

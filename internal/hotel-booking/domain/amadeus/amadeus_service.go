@@ -3,6 +3,8 @@ package amadeus
 import (
 	"errors"
 	"log"
+	"microservices-travel-backend/internal/hotel-booking/app/dto/request"
+	"microservices-travel-backend/internal/hotel-booking/app/dto/response"
 	"microservices-travel-backend/internal/hotel-booking/domain/models"
 	"microservices-travel-backend/internal/shared/api_provider/amadeus/hotels"
 	"microservices-travel-backend/internal/shared/api_provider/amadeus/hotels/amadeusHotelModels"
@@ -14,14 +16,6 @@ import (
 type AmadeusService struct {
 	client *hotels.AmadeusClient
 	places *places.PlacesClient
-}
-
-type SearchHotelsRequest struct {
-	CityCode     string `json:"cityCode"`
-	CheckInDate  string `json:"checkInDate"`
-	CheckOutDate string `json:"checkOutDate"`
-	Rooms        int    `json:"rooms"`
-	Persons      int    `json:"persons"`
 }
 
 func NewAmadeusService(client *hotels.AmadeusClient, places *places.PlacesClient) *AmadeusService {
@@ -39,8 +33,7 @@ func (a *AmadeusService) FetchHotelOffers(hotelIDs []string, adults int) ([]amad
 	return offers, nil
 }
 
-func (a *AmadeusService) SearchHotels(req SearchHotelsRequest) ([]models.EnrichedHotelOffer, error) {
-	// Fetch hotels for the given city code
+func (a *AmadeusService) SearchHotels(req request.HotelSearchRequest) ([]models.EnrichedHotelOffer, error) {
 	hotels, err := a.client.HotelSearch(req.CityCode)
 	if err != nil {
 		log.Println("ERROR: Failed to fetch hotels -", err)
@@ -164,7 +157,7 @@ func extractHotelIDs(hotels []amadeusHotelModels.HotelData) []string {
 	return hotelIDs
 }
 
-func filterHotelsByRequest(hotelOffers []amadeusHotelModels.HotelOffer, req SearchHotelsRequest) []amadeusHotelModels.HotelOffer {
+func filterHotelsByRequest(hotelOffers []amadeusHotelModels.HotelOffer, req request.HotelSearchRequest) []amadeusHotelModels.HotelOffer {
 	var filteredHotels []amadeusHotelModels.HotelOffer
 
 	for _, hotelOffer := range hotelOffers {
@@ -183,6 +176,10 @@ func filterHotelsByRequest(hotelOffers []amadeusHotelModels.HotelOffer, req Sear
 	}
 
 	return filteredHotels
+}
+
+func (a *AmadeusService) HotelDetails(req request.HotelDetailsRequest) ([]response.HotelDetails, error) {
+
 }
 
 func (a *AmadeusService) CreateHotelBooking(requestBody amadeusHotelModels.HotelBookingRequest) (*amadeusHotelModels.HotelOrderResponse, error) {

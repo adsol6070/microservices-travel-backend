@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"io"
 	"log"
+	"microservices-travel-backend/internal/hotel-booking/app/dto/request"
 	"microservices-travel-backend/internal/hotel-booking/app/usecase"
 	"microservices-travel-backend/internal/shared/api_provider/amadeus/hotels/amadeusHotelModels"
 	"microservices-travel-backend/pkg/response"
@@ -24,24 +25,18 @@ func NewHotelHandler(r *mux.Router, hotelUsecase *usecase.HotelUsecase) {
 		hotelUsecase: hotelUsecase,
 	}
 
-	r.HandleFunc("/hotels/search", handler.SearchHotels).Methods("POST")
-	r.HandleFunc("/hotels/offers", handler.FetchHotelOffers).Methods("GET")
-	r.HandleFunc("/hotels/book", handler.CreateHotelBooking).Methods("POST")
-	r.HandleFunc("/hotels/ratings", handler.FetchHotelRatings).Methods("GET")
-	r.HandleFunc("/hotels/hotelnamecomplete", handler.HotelNameAutoComplete).Methods("GET")
-}
+	hotelRouter := r.PathPrefix("/hotels").Subrouter()
 
-// Define a struct for the request body
-type SearchHotelsRequest struct {
-	CityCode     string `json:"cityCode" validate:"required,len=3"`
-	CheckInDate  string `json:"checkInDate" validate:"required"`
-	CheckOutDate string `json:"checkOutDate" validate:"required"`
-	Rooms        int    `json:"rooms" validate:"required,min=1"`
-	Persons      int    `json:"persons" validate:"required,min=1"`
+	hotelRouter.HandleFunc("/search", handler.SearchHotels).Methods(http.MethodPost)
+	hotelRouter.HandleFunc("/detail", handler.HotelDetails).Methods(http.MethodPost)
+	hotelRouter.HandleFunc("/offers", handler.FetchHotelOffers).Methods(http.MethodGet)
+	hotelRouter.HandleFunc("/book", handler.CreateHotelBooking).Methods(http.MethodPost)
+	hotelRouter.HandleFunc("/ratings", handler.FetchHotelRatings).Methods(http.MethodGet)
+	hotelRouter.HandleFunc("/hotelnamecomplete", handler.HotelNameAutoComplete).Methods(http.MethodGet)
 }
 
 func (h *HotelHandler) SearchHotels(w http.ResponseWriter, r *http.Request) {
-	var req SearchHotelsRequest
+	var req request.HotelSearchRequest
 
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
@@ -56,15 +51,7 @@ func (h *HotelHandler) SearchHotels(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	usecaseReq := usecase.SearchHotelsRequest{
-		CityCode:     req.CityCode,
-		CheckInDate:  req.CheckInDate,
-		CheckOutDate: req.CheckOutDate,
-		Rooms:        req.Rooms,
-		Persons:      req.Persons,
-	}
-
-	hotelsWithOffer, err := h.hotelUsecase.SearchHotels(usecaseReq)
+	hotelsWithOffer, err := h.hotelUsecase.SearchHotels(req)
 	if err != nil {
 		log.Println("ERROR: Error occurred while fetching hotel offers -", err)
 		response.InternalServerError(w, "Failed to fetch hotel offers")
@@ -72,6 +59,31 @@ func (h *HotelHandler) SearchHotels(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response.Success(w, http.StatusOK, "Hotels fetched successfully", hotelsWithOffer)
+}
+
+func (h *HotelHandler) HotelDetails(w http.ResponseWriter, r *http.Request) {
+	var req request.HotelDetailsRequest
+
+	err := json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		log.Println("ERROR: Failed to decode request body -", err)
+		response.BadRequest(w, "Invalid request body")
+		return
+	}
+
+	if err := validator.ValidateStruct(req); err != nil {
+		log.Println("ERROR: Validation failed -", err)
+		response.BadRequest(w, err.Error())
+		return
+	}
+
+	hotelDetails, err := h.hotelUsecase.HotelDetails(req)
+	if err != nil {
+		log.Println("ERROR: Error occured while fetching hotel details -", err)
+		response.InternalServerError(w, "Failed to fetch hotel details")
+	}
+
+	response.Success(w, http.StatusOK, "Hotel Details fetched successfully", hotelDetails)
 }
 
 func (h *HotelHandler) FetchHotelOffers(w http.ResponseWriter, r *http.Request) {

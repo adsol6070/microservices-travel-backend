@@ -111,7 +111,7 @@ func (h *HotelHandler) FetchHotelOffers(w http.ResponseWriter, r *http.Request) 
 }
 
 func (h *HotelHandler) CreateHotelBooking(w http.ResponseWriter, r *http.Request) {
-	var bookingRequest request.HotelBookingRequest
+	var bookingRequest request.HotelOrderRequest
 
 	err := json.NewDecoder(r.Body).Decode(&bookingRequest)
 	if err != nil {

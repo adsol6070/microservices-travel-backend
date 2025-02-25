@@ -1,12 +1,14 @@
 package amadeusHotelModels
 
-type HotelBookingReq struct {
-	Data HotelOrderData `json:"data"`
+import "microservices-travel-backend/internal/hotel-booking/app/dto/request"
+
+type AmadeusHotelOrderRequest struct {
+	Data request.HotelOrderRequest `json:"data"`
 }
 
-type HotelBookingResp struct {
-	Data     HotelOrderResponseData `json:"data"`
-	Warnings []Warning              `json:"warnings,omitempty"`
+type AmadeusHotelOrderResponse struct {
+	Data     AmadeusBookingData `json:"data"`
+	Warnings []Warning          `json:"warnings,omitempty"`
 }
 
 type HotelOrderData struct {
@@ -25,7 +27,7 @@ type Contact struct {
 	Email string `json:"email"`
 }
 
-type HotelOrderResponseData struct {
+type AmadeusBookingData struct {
 	Type              string             `json:"type"`
 	ID                string             `json:"id"`
 	HotelBookings     []HotelBooking     `json:"hotelBookings"`

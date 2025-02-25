@@ -1,7 +1,11 @@
 package request
 
-type HotelBookingRequest struct {
-	Data HotelBookRequest `json:"data" validate:"required"`
+type HotelOrderRequest struct {
+	Type        string      `json:"type" validate:"required"`
+	Guests      []Guest     `json:"guests" validate:"required,dive"`
+	TravelAgent TravelAgent `json:"travelAgent"`
+	RoomAssoc   []RoomAssoc `json:"roomAssociations" validate:"required,dive"`
+	Payment     Payment     `json:"payment"`
 }
 
 type Guest struct {
@@ -14,40 +18,34 @@ type Guest struct {
 }
 
 type TravelAgent struct {
-	Contact struct {
-		Email string `json:"email" validate:"required,email"`
-	} `json:"contact"`
+	Contact Contact `json:"contact"`
 }
 
-type GuestReference struct {
-	GuestReference string `json:"guestReference" validate:"required"`
+type Contact struct {
+	Email string `json:"email"`
 }
 
-type RoomAssociation struct {
-	GuestReferences []GuestReference `json:"guestReferences" validate:"required,dive"`
-	HotelOfferID    string           `json:"hotelOfferId" validate:"required"`
+type RoomAssoc struct {
+	GuestRefs    []GuestRef `json:"guestReferences" validate:"required,dive"`
+	HotelOfferID string     `json:"hotelOfferId" validate:"required"`
 }
 
-type PaymentCardInfo struct {
-	VendorCode string `json:"vendorCode" validate:"required"`
-	CardNumber string `json:"cardNumber" validate:"required,len=16"`
-	ExpiryDate string `json:"expiryDate" validate:"required"`
-	HolderName string `json:"holderName" validate:"required"`
+type GuestRef struct {
+	GuestReference string `json:"guestReference"`
+}
+
+type Payment struct {
+	Method      string      `json:"method"`
+	PaymentCard PaymentCard `json:"paymentCard"`
 }
 
 type PaymentCard struct {
 	PaymentCardInfo PaymentCardInfo `json:"paymentCardInfo"`
 }
 
-type Payment struct {
-	Method       string      `json:"method" validate:"required"`
-	PaymentCard  PaymentCard `json:"paymentCard"`
-}
-
-type HotelBookRequest struct {
-	Type             string            `json:"type" validate:"required"`
-	Guests           []Guest           `json:"guests" validate:"required,dive"`
-	TravelAgent      TravelAgent       `json:"travelAgent"`
-	RoomAssociations []RoomAssociation `json:"roomAssociations" validate:"required,dive"`
-	Payment          Payment           `json:"payment" validate:"required"`
+type PaymentCardInfo struct {
+	VendorCode string `json:"vendorCode"`
+	CardNumber string `json:"cardNumber"`
+	ExpiryDate string `json:"expiryDate"`
+	HolderName string `json:"holderName"`
 }

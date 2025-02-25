@@ -1,8 +1,13 @@
 package amadeusHotelModels
 
-type HotelOffersResponse struct {
+type HotelOffersReq struct {
+	HotelIDs []string `json:"hotelIds"`
+	Adults   int      `json:"adults"`
+}
+
+type HotelOffersResp struct {
 	Data     []HotelOffer `json:"data"`
-	Warnings []Warning    `json:"warnings"`
+	Warnings []Warning    `json:"warnings,omitempty"`
 }
 
 type HotelOffer struct {
@@ -11,30 +16,6 @@ type HotelOffer struct {
 	Available bool    `json:"available"`
 	Offers    []Offer `json:"offers"`
 	Self      string  `json:"self"`
-}
-
-type Hotel struct {
-	Type      string  `json:"type"`
-	HotelID   string  `json:"hotelId"`
-	ChainCode string  `json:"chainCode"`
-	DupeID    string  `json:"dupeId"`
-	Name      string  `json:"name"`
-	CityCode  string  `json:"cityCode"`
-	Latitude  float64 `json:"latitude"`
-	Longitude float64 `json:"longitude"`
-}
-
-type Offer struct {
-	ID                  string              `json:"id"`
-	CheckInDate         string              `json:"checkInDate"`
-	CheckOutDate        string              `json:"checkOutDate"`
-	RateCode            string              `json:"rateCode"`
-	RateFamilyEstimated RateFamilyEstimated `json:"rateFamilyEstimated"`
-	Room                Room                `json:"room"`
-	Guests              Guests              `json:"guests"`
-	Price               Price               `json:"price"`
-	Policies            Policies            `json:"policies"`
-	Self                string              `json:"self"`
 }
 
 type RateFamilyEstimated struct {

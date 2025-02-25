@@ -26,10 +26,10 @@ func (u *HotelUsecase) SearchHotels(req request.HotelSearchRequest) ([]models.En
 	return hotelsWithOffer, nil
 }
 
-func (u *HotelUsecase) HotelDetails(req request.HotelDetailsRequest) ([]response.HotelDetails, error) {
+func (u *HotelUsecase) HotelDetails(req request.HotelDetailsRequest) (response.HotelDetails, error) {
 	hotelDetails, err := u.service.HotelDetails(req)
 	if err != nil {
-		return nil, err
+		return response.HotelDetails{}, err
 	}
 	return hotelDetails, nil
 }
@@ -42,7 +42,7 @@ func (u *HotelUsecase) FetchHotelOffers(hotelIDs []string, adults int) ([]amadeu
 	return offers, nil
 }
 
-func (u *HotelUsecase) CreateHotelBooking(requestBody request.HotelBookingRequest) (*amadeusHotelModels.HotelOrderResponse, error) {
+func (u *HotelUsecase) CreateHotelBooking(requestBody request.HotelBookingRequest) (*amadeusHotelModels.HotelOrderResponseData, error) {
 	booking, err := u.service.CreateHotelBooking(requestBody)
 	if err != nil {
 		return nil, err

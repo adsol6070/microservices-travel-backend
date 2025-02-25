@@ -1,6 +1,7 @@
 package amadeus
 
 import (
+	"encoding/json"
 	"errors"
 	"log"
 	"microservices-travel-backend/internal/hotel-booking/app/dto/request"
@@ -10,6 +11,7 @@ import (
 	"microservices-travel-backend/internal/shared/api_provider/amadeus/hotels/amadeusHotelModels"
 	"microservices-travel-backend/internal/shared/api_provider/google/places"
 	"microservices-travel-backend/internal/shared/api_provider/google/places/googlePlaceModels"
+	"strconv"
 	"sync"
 )
 
@@ -34,7 +36,7 @@ func (a *AmadeusService) FetchHotelOffers(hotelIDs []string, adults int) ([]amad
 }
 
 func (a *AmadeusService) SearchHotels(req request.HotelSearchRequest) ([]models.EnrichedHotelOffer, error) {
-	hotels, err := a.client.HotelSearch(req.CityCode)
+	hotels, err := a.client.FetchHotelsByCity(req.CityCode)
 	if err != nil {
 		log.Println("ERROR: Failed to fetch hotels -", err)
 		return nil, err
@@ -136,14 +138,14 @@ func (a *AmadeusService) SearchHotels(req request.HotelSearchRequest) ([]models.
 	return enrichedHotels, nil
 }
 
-func extractHotelIDs(hotels []amadeusHotelModels.HotelData) []string {
+func extractHotelIDs(hotels []amadeusHotelModels.Hotel) []string {
 	var hotelIDs []string
 	var mu sync.Mutex
 	var wg sync.WaitGroup
 
 	for _, hotel := range hotels {
 		wg.Add(1)
-		go func(h amadeusHotelModels.HotelData) {
+		go func(h amadeusHotelModels.Hotel) {
 			defer wg.Done()
 			if h.HotelID != "" {
 				mu.Lock()
@@ -166,7 +168,7 @@ func filterHotelsByRequest(hotelOffers []amadeusHotelModels.HotelOffer, req requ
 		}
 
 		for _, offer := range hotelOffer.Offers {
-			if offer.CheckInDate == req.CheckInDate && offer.CheckOutDate == req.CheckOutDate {
+			if offer.CheckIn == req.CheckInDate && offer.CheckOut == req.CheckOutDate {
 				if req.Rooms > 0 && req.Rooms == len(hotelOffer.Offers) {
 					filteredHotels = append(filteredHotels, hotelOffer)
 					break
@@ -176,10 +178,6 @@ func filterHotelsByRequest(hotelOffers []amadeusHotelModels.HotelOffer, req requ
 	}
 
 	return filteredHotels
-}
-
-func (a *AmadeusService) HotelDetails(req request.HotelDetailsRequest) ([]response.HotelDetails, error) {
-	return nil, nil
 }
 
 func convertGuests(guests []request.Guest) []amadeusHotelModels.Guest {
@@ -205,10 +203,10 @@ func convertTravelAgent(agent request.TravelAgent) amadeusHotelModels.TravelAgen
 	}
 }
 
-func convertRoomAssociations(associations []request.RoomAssociation) []amadeusHotelModels.RoomAssociation {
-	var converted []amadeusHotelModels.RoomAssociation
+func convertRoomAssociations(associations []request.RoomAssociation) []response.RoomAssociation {
+	var converted []response.RoomAssociation
 	for _, a := range associations {
-		converted = append(converted, amadeusHotelModels.RoomAssociation{
+		converted = append(converted, response.RoomAssociation{
 			HotelOfferID:    a.HotelOfferID,
 			GuestReferences: convertGuestReferences(a.GuestReferences),
 		})
@@ -216,10 +214,10 @@ func convertRoomAssociations(associations []request.RoomAssociation) []amadeusHo
 	return converted
 }
 
-func convertGuestReferences(refs []request.GuestReference) []amadeusHotelModels.GuestBookReference {
-	var converted []amadeusHotelModels.GuestBookReference
+func convertGuestReferences(refs []request.GuestReference) []response.GuestReference {
+	var converted []response.GuestReference
 	for _, r := range refs {
-		converted = append(converted, amadeusHotelModels.GuestBookReference{
+		converted = append(converted, response.GuestReference{
 			GuestReference: r.GuestReference,
 		})
 	}
@@ -240,9 +238,9 @@ func convertPayment(payment request.Payment) amadeusHotelModels.PaymentDetails {
 	}
 }
 
-func (a *AmadeusService) CreateHotelBooking(requestBody request.HotelBookingRequest) (*amadeusHotelModels.HotelOrderResponse, error) {
+func (a *AmadeusService) CreateHotelBooking(requestBody request.HotelBookingRequest) (*amadeusHotelModels.HotelOrderResponseData, error) {
 
-	convertedRequest := amadeusHotelModels.HotelBookingRequest{
+	convertedRequest := amadeusHotelModels.HotelBookingReq{
 		Data: amadeusHotelModels.HotelOrderData{
 			Type:             requestBody.Data.Type,
 			Guests:           convertGuests(requestBody.Data.Guests),
@@ -256,6 +254,119 @@ func (a *AmadeusService) CreateHotelBooking(requestBody request.HotelBookingRequ
 		return nil, err
 	}
 	return booking, nil
+}
+
+func (a *AmadeusService) extractPhotoReferences(photos []googlePlaceModels.PhotoDetail) []string {
+	var photoURLs []string
+
+	for _, photo := range photos {
+		photoResp, err := a.places.GetPlacePhoto(photo.Name, photo.HeightPx, photo.WidthPx)
+		if err == nil {
+			photoURLs = append(photoURLs, photoResp.PhotoURI)
+		} else {
+			log.Println("ERROR: Failed to fetch photo -", err)
+		}
+	}
+
+	return photoURLs
+}
+
+func (a *AmadeusService) HotelDetails(req request.HotelDetailsRequest) (response.HotelDetails, error) {
+	log.Println("INFO: Fetching hotel details for", req.HotelID)
+	hotelOffers, err := a.client.FetchHotelOffers([]string{req.HotelID}, 1)
+	if err != nil {
+		log.Println("ERROR: Failed to fetch hotel offers -", err)
+		return response.HotelDetails{}, err
+	}
+
+	if len(hotelOffers) == 0 {
+		log.Println("ERROR: No hotel offers available for HotelID:", req.HotelID)
+		return response.HotelDetails{}, errors.New("no hotel offers available")
+	}
+
+	offersJSON, err := json.MarshalIndent(hotelOffers, "", "  ")
+	if err != nil {
+		log.Println("ERROR: Failed to marshal hotel offers -", err)
+	} else {
+		log.Println("INFO: Hotel offers fetched successfully for HotelID:", req.HotelID, "Offers:", string(offersJSON))
+	}
+
+	log.Println("INFO: Fetching Google Place details for PlaceID:", req.GooglePlaceID)
+	googlePlaceDetails, err := a.places.GetPlaceDetails(req.GooglePlaceID, "*")
+	if err != nil {
+		log.Println("ERROR: Failed to fetch Google Place details -", err)
+		return response.HotelDetails{}, err
+	}
+
+	googlePlaceDetailsJSON, err := json.MarshalIndent(googlePlaceDetails, "", "  ")
+	if err != nil {
+		log.Println("ERROR: Failed to marshal googlePlace details -", err)
+	} else {
+		log.Println("INFO: GooglePlaceDetails fetched successfully for GooglePlaceID:", req.GooglePlaceID, "GooglePlaceDetails:", string(googlePlaceDetailsJSON))
+	}
+
+	offer := hotelOffers[0]
+	if len(offer.Offers) == 0 {
+		return response.HotelDetails{}, errors.New("no offers available for the selected hotel")
+	}
+
+	offerDetails := offer.Offers[0]
+
+	basePrice, _ := strconv.ParseFloat(offerDetails.Price.Base, 64)
+	totalPrice, _ := strconv.ParseFloat(offerDetails.Price.Total, 64)
+
+	hotel := response.HotelDetails{
+		HotelID:      offer.Hotel.HotelID,
+		HotelName:    googlePlaceDetails.Name,
+		CheckInDate:  offerDetails.CheckIn,
+		CheckOutDate: offerDetails.CheckOut,
+		Price: response.PriceDetails{
+			Currency: offerDetails.Price.Currency,
+			Base:     basePrice,
+			Total:    totalPrice,
+		},
+		Location: response.LocationDetails{
+			CityCode: *offer.Hotel.CityCode,
+			Address: response.Address{
+				Street:     googlePlaceDetails.AddressDescriptor.Street,
+				City:       googlePlaceDetails.AddressDescriptor.City,
+				State:      googlePlaceDetails.AddressDescriptor.State,
+				PostalCode: googlePlaceDetails.AddressDescriptor.PostalCode,
+				Country:    googlePlaceDetails.AddressDescriptor.Country,
+			},
+			Coordinates: response.Coordinates{
+				Latitude:  *googlePlaceDetails.Location.Latitude,
+				Longitude: *googlePlaceDetails.Location.Longitude,
+			},
+			GoogleMapsURI: googlePlaceDetails.GoogleMapsURI,
+			PlaceID:       googlePlaceDetails.ID,
+		},
+		Contact: response.ContactDetails{
+			PhoneNumber: googlePlaceDetails.InternationalPhoneNumber,
+		},
+		Rating: response.RatingDetails{
+			Stars:            0, // Google Places API does not return star ratings
+			UserReviewsCount: googlePlaceDetails.UserRatingCount,
+			AverageRating:    googlePlaceDetails.Rating,
+		},
+		Photos: a.extractPhotoReferences(googlePlaceDetails.Photos), // Extracting photo URLs
+		Accessibility: response.AccessibilityOptions{
+			WheelchairAccessible: googlePlaceDetails.AccessibilityOptions.WheelchairAccessible,
+		},
+		Payment: response.PaymentOptions{
+			CardsAccepted:  googlePlaceDetails.PaymentOptions.CardsAccepted,
+			CashAccepted:   googlePlaceDetails.PaymentOptions.CashAccepted,
+			DigitalWallets: googlePlaceDetails.PaymentOptions.DigitalWallets,
+		},
+		Policies: response.HotelPolicies{
+			CheckInTime:    "",
+			CheckOutTime:   "",
+			SmokingAllowed: false,
+			MinCheckInAge:  18,
+		},
+	}
+
+	return hotel, nil
 }
 
 func (a *AmadeusService) FetchHotelRatings(hotelIDs []string) (*amadeusHotelModels.HotelSentimentResponse, error) {

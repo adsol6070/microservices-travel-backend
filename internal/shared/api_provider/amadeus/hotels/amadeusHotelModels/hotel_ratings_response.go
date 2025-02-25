@@ -1,8 +1,8 @@
 package amadeusHotelModels
 
 type HotelSentimentResponse struct {
-	Meta     MetaResponse         `json:"meta"`
-	Data     []HotelDataResponse  `json:"data"`
+	Meta     MetaResponse        `json:"meta"`
+	Data     []HotelDataResponse `json:"data"`
 	Warnings []WarningResponse   `json:"warnings,omitempty"`
 }
 
@@ -16,20 +16,20 @@ type HotelDataResponse struct {
 }
 
 type Sentiments struct {
-	Staff          int `json:"staff"`
-	Location       int `json:"location"`
-	Service        int `json:"service"`
-	RoomComforts   int `json:"roomComforts"`
-	SleepQuality   int `json:"sleepQuality"`
-	SwimmingPool   int `json:"swimmingPool"`
-	ValueForMoney  int `json:"valueForMoney"`
-	Facilities     int `json:"facilities"`
-	Catering       int `json:"catering"`
+	Staff            int `json:"staff"`
+	Location         int `json:"location"`
+	Service          int `json:"service"`
+	RoomComforts     int `json:"roomComforts"`
+	SleepQuality     int `json:"sleepQuality"`
+	SwimmingPool     int `json:"swimmingPool"`
+	ValueForMoney    int `json:"valueForMoney"`
+	Facilities       int `json:"facilities"`
+	Catering         int `json:"catering"`
 	PointsOfInterest int `json:"pointsOfInterest"`
 }
 
 type MetaResponse struct {
-	Count int   `json:"count"`
+	Count int           `json:"count"`
 	Links LinksResponse `json:"links"`
 }
 

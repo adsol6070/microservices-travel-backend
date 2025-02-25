@@ -1,7 +1,12 @@
 package amadeusHotelModels
 
-type HotelBookingRequest struct {
+type HotelBookingReq struct {
 	Data HotelOrderData `json:"data"`
+}
+
+type HotelBookingResp struct {
+	Data     HotelOrderResponseData `json:"data"`
+	Warnings []Warning              `json:"warnings,omitempty"`
 }
 
 type HotelOrderData struct {
@@ -12,15 +17,6 @@ type HotelOrderData struct {
 	Payment          PaymentDetails    `json:"payment"`
 }
 
-type Guest struct {
-	TID       int    `json:"tid"`
-	Title     string `json:"title"`
-	FirstName string `json:"firstName"`
-	LastName  string `json:"lastName"`
-	Phone     string `json:"phone"`
-	Email     string `json:"email"`
-}
-
 type TravelAgent struct {
 	Contact Contact `json:"contact"`
 }
@@ -29,27 +25,71 @@ type Contact struct {
 	Email string `json:"email"`
 }
 
-type RoomAssociation struct {
-	HotelOfferID    string               `json:"hotelOfferId"`
-	GuestReferences []GuestBookReference `json:"guestReferences"`
+type HotelOrderResponseData struct {
+	Type              string             `json:"type"`
+	ID                string             `json:"id"`
+	HotelBookings     []HotelBooking     `json:"hotelBookings"`
+	Guests            []Guest            `json:"guests"`
+	AssociatedRecords []AssociatedRecord `json:"associatedRecords"`
+	Self              string             `json:"self"`
 }
 
-type GuestBookReference struct {
-	GuestReference string `json:"guestReference"`
+type HotelBooking struct {
+	Type                     string              `json:"type"`
+	ID                       string              `json:"id"`
+	BookingStatus            string              `json:"bookingStatus"`
+	HotelProviderInformation []HotelProviderInfo `json:"hotelProviderInformation"`
+	RoomAssociations         []RoomAssociation   `json:"roomAssociations"`
+	HotelOffer               BookedHotelOffer    `json:"hotelOffer"`
+	Hotel                    HotelDetails        `json:"hotel"`
+	Payment                  PaymentDetails      `json:"payment"`
+	TravelAgentID            string              `json:"travelAgentId"`
 }
 
-type PaymentDetails struct {
-	Method      string `json:"method"`
-	PaymentCard Card   `json:"paymentCard"`
+type HotelProviderInfo struct {
+	HotelProviderCode  string `json:"hotelProviderCode"`
+	ConfirmationNumber string `json:"confirmationNumber"`
 }
 
-type Card struct {
-	PaymentCardInfo PaymentCardInfo `json:"paymentCardInfo"`
+type Tax struct {
+	Amount           string `json:"amount"`
+	Code             string `json:"code"`
+	Currency         string `json:"currency"`
+	Included         bool   `json:"included"`
+	PricingFrequency string `json:"pricingFrequency"`
+	PricingMode      string `json:"pricingMode"`
 }
 
-type PaymentCardInfo struct {
-	VendorCode string `json:"vendorCode"`
-	CardNumber string `json:"cardNumber"`
-	ExpiryDate string `json:"expiryDate"`
-	HolderName string `json:"holderName"`
+type Variations struct {
+	Changes []PriceChange `json:"changes"`
+}
+
+type PriceChange struct {
+	StartDate string `json:"startDate"`
+	EndDate   string `json:"endDate"`
+	Base      string `json:"base"`
+	Currency  string `json:"currency"`
+}
+
+type RoomDetails struct {
+	Description Description `json:"description"`
+	Type        string      `json:"type"`
+}
+
+type HotelDetails struct {
+	HotelID   string `json:"hotelId"`
+	ChainCode string `json:"chainCode"`
+	Name      string `json:"name"`
+	Self      string `json:"self"`
+}
+
+type AssociatedRecord struct {
+	Reference        string `json:"reference"`
+	OriginSystemCode string `json:"originSystemCode"`
+}
+
+type Warning struct {
+	Code    int    `json:"code"`
+	Title   string `json:"title"`
+	Details string `json:"details,omitempty"`
 }

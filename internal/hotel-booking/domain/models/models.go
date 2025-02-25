@@ -9,14 +9,14 @@ type PlaceReview struct {
 }
 
 type EnrichedHotelOffer struct {
-	HotelID           string             `json:"hotelId"`
-	Name              string             `json:"name"`
-	Latitude          float64            `json:"latitude"`
-	Longitude         float64            `json:"longitude"`
-	Rating            float64            `json:"rating,omitempty"`
-	Reviews           []PlaceReview      `json:"reviews,omitempty"`
-	PhotoURL          string             `json:"photoUrl"`
+	HotelID           string                     `json:"hotelId"`
+	Name              string                     `json:"name"`
+	Latitude          *float64                   `json:"latitude"`
+	Longitude         *float64                   `json:"longitude"`
+	Rating            float64                    `json:"rating,omitempty"`
+	Reviews           []PlaceReview              `json:"reviews,omitempty"`
+	PhotoURL          string                     `json:"photoUrl"`
 	Offers            []amadeusHotelModels.Offer `json:"offers"`
-	GooglePlaceID     string             `json:"googlePlaceId"`
-	GoogleDisplayName string             `json:"googleDisplayName"`
+	GooglePlaceID     string                     `json:"googlePlaceId"`
+	GoogleDisplayName string                     `json:"googleDisplayName"`
 }

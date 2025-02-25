@@ -81,6 +81,7 @@ func (h *HotelHandler) HotelDetails(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Println("ERROR: Error occured while fetching hotel details -", err)
 		response.InternalServerError(w, "Failed to fetch hotel details")
+		return
 	}
 
 	response.Success(w, http.StatusOK, "Hotel Details fetched successfully", hotelDetails)
@@ -119,7 +120,7 @@ func (h *HotelHandler) CreateHotelBooking(w http.ResponseWriter, r *http.Request
 	}
 	defer r.Body.Close()
 
-	var bookingRequest amadeusHotelModels.HotelBookingRequest
+	var bookingRequest amadeusHotelModels.HotelBookingReq
 	err = json.Unmarshal(requestBody, &bookingRequest)
 	if err != nil {
 		response.BadRequest(w, "Invalid request format")

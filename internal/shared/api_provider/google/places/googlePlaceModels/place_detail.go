@@ -90,20 +90,28 @@ type AuthorAttributionDetail struct {
 }
 
 type PaymentOptions struct {
-	AcceptsCreditCards bool `json:"acceptsCreditCards"`
-	AcceptsDebitCards  bool `json:"acceptsDebitCards"`
-	AcceptsCashOnly    bool `json:"acceptsCashOnly"`
-	AcceptsNfc         bool `json:"acceptsNfc"`
+	CardsAccepted     []string `json:"cardsAccepted"`
+	CashAccepted      bool     `json:"cashAccepted"`
+	AcceptsDebitCards bool     `json:"acceptsDebitCards"`
+	AcceptsCashOnly   bool     `json:"acceptsCashOnly"`
+	AcceptsNfc        bool     `json:"acceptsNfc"`
+	DigitalWallets    []string `json:"digitalWalletsAccepted"`
 }
 
 type AccessibilityOptions struct {
 	WheelchairAccessibleParking  bool `json:"wheelchairAccessibleParking"`
 	WheelchairAccessibleEntrance bool `json:"wheelchairAccessibleEntrance"`
+	WheelchairAccessible         bool `json:"wheelchairAccessible"`
 }
 
 type AddressDescriptor struct {
-	Landmarks []Landmark `json:"landmarks"`
-	Areas     []Area     `json:"areas"`
+	Landmarks  []Landmark `json:"landmarks"`
+	Areas      []Area     `json:"areas"`
+	Street     string     `json:"street"`
+	City       string     `json:"city"`
+	State      string     `json:"state"`
+	PostalCode string     `json:"postalCode"`
+	Country    string     `json:"country"`
 }
 
 type Landmark struct {

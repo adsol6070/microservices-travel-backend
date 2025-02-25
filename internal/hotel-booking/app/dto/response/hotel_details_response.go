@@ -47,7 +47,6 @@ type Coordinates struct {
 type ContactDetails struct {
 	PhoneNumber string `json:"phoneNumber"`
 	Email       string `json:"email"`
-	Website     string `json:"website"`
 }
 
 type RatingDetails struct {

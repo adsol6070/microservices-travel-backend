@@ -18,15 +18,15 @@ type HotelOrderResponseData struct {
 
 // HotelBookingDetails represents individual hotel bookings.
 type HotelBookingDetails struct {
-	BookingType       string              `json:"type"`
-	BookingID         string              `json:"id"`
-	BookingStatus     string              `json:"bookingStatus"`
-	ProviderInfo      []HotelProviderInfo `json:"hotelProviderInformation"`
-	RoomAssignments   []RoomAssociation   `json:"roomAssociations"`
-	HotelOfferDetails HotelResponseOffer  `json:"hotelOffer"`
-	HotelInfo         HotelDetails        `json:"hotel"`
-	PaymentDetails    PaymentInfo         `json:"payment"`
-	TravelAgentID     string              `json:"travelAgentId"`
+	BookingType       string                      `json:"type"`
+	BookingID         string                      `json:"id"`
+	BookingStatus     string                      `json:"bookingStatus"`
+	ProviderInfo      []HotelProviderInfoResponse `json:"hotelProviderInformation"`
+	RoomAssignments   []RoomAssociation           `json:"roomAssociations"`
+	HotelOfferDetails HotelResponseOffer          `json:"hotelOffer"`
+	HotelInfo         HotelDetails                `json:"hotel"`
+	PaymentDetails    PaymentInfo                 `json:"payment"`
+	TravelAgentID     string                      `json:"travelAgentId"`
 }
 
 // HotelProviderInfo represents provider details.

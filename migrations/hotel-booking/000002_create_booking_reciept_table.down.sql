@@ -1,0 +1,7 @@
+DROP TABLE IF EXISTS hotel_bookings;
+DROP TABLE IF EXISTS guests;
+DROP TABLE IF EXISTS associated_records;
+DROP TYPE IF EXISTS booking_status;
+DROP EXTENSION IF EXISTS "uuid-ossp";
+
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";

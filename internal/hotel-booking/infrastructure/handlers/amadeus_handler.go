@@ -2,11 +2,9 @@ package handlers
 
 import (
 	"encoding/json"
-	"io"
 	"log"
 	"microservices-travel-backend/internal/hotel-booking/app/dto/request"
 	"microservices-travel-backend/internal/hotel-booking/app/usecase"
-	"microservices-travel-backend/internal/shared/api_provider/amadeus/hotels/amadeusHotelModels"
 	"microservices-travel-backend/pkg/response"
 	validator "microservices-travel-backend/pkg/validation"
 	"net/http"
@@ -112,17 +110,18 @@ func (h *HotelHandler) FetchHotelOffers(w http.ResponseWriter, r *http.Request) 
 }
 
 func (h *HotelHandler) CreateHotelBooking(w http.ResponseWriter, r *http.Request) {
-	requestBody, err := io.ReadAll(r.Body)
+	var bookingRequest request.HotelBookingRequest
+
+	err := json.NewDecoder(r.Body).Decode(&bookingRequest)
 	if err != nil {
-		response.BadRequest(w, "Failed to read request body")
+		log.Println("ERROR: Failed to decode request body -", err)
+		response.BadRequest(w, "Invalid request body")
 		return
 	}
-	defer r.Body.Close()
 
-	var bookingRequest amadeusHotelModels.HotelBookingRequest
-	err = json.Unmarshal(requestBody, &bookingRequest)
-	if err != nil {
-		response.BadRequest(w, "Invalid request format")
+	if err := validator.ValidateStruct(bookingRequest); err != nil {
+		log.Println("ERROR: Validation failed -", err)
+		response.BadRequest(w, err.Error())
 		return
 	}
 

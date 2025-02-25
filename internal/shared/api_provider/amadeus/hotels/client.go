@@ -236,6 +236,49 @@ func (c *AmadeusClient) HotelSearch(cityCode string) ([]amadeusHotelModels.Hotel
 	return result.Data, nil
 }
 
+func (c *AmadeusClient) HotelListByGeocode(longitude string, latitude string) ([]amadeusHotelModels.HotelData, error) {
+	cacheKey := fmt.Sprintf("hotel_list_geocode:%s", strings.ToUpper(longitude))
+
+	// Check cache
+	cachedData, err := c.Cache.Get(ctx, cacheKey).Result()
+	if err == nil {
+		var hotels []amadeusHotelModels.HotelData
+		if json.Unmarshal([]byte(cachedData), &hotels) == nil {
+			fmt.Println("Cache hit: Returning data from Redis")
+			return hotels, nil
+		}
+	}
+
+	fmt.Println("Cache miss: Fetching data from Amadeus API")
+
+	// Fetch token
+	token, err := c.TokenManager.GetValidToken()
+	if err != nil {
+		return nil, fmt.Errorf("failed to retrieve Amadeus token: %w", err)
+	}
+
+	// Prepare request URL
+	url := fmt.Sprintf("%s/v1/reference-data/locations/hotels/by-geocode?latitude=%f&longitude=%f", c.BaseURL, latitude, longitude)
+
+	// Make API request and get raw response
+	respBody, err := c.makeRequest("GET", url, token, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	// Parse JSON response
+	var result amadeusHotelModels.HotelListResponse
+	if err := json.Unmarshal(respBody, &result); err != nil {
+		return nil, fmt.Errorf("failed to parse hotel search response: %w", err)
+	}
+
+	// Cache result
+	jsonData, _ := json.Marshal(result.Data)
+	c.Cache.Set(ctx, cacheKey, jsonData, 10*time.Minute)
+
+	return result.Data, nil
+}
+
 func (c *AmadeusClient) CreateHotelBooking(requestBody amadeusHotelModels.HotelBookingRequest) (*amadeusHotelModels.HotelOrderResponse, error) {
 	// Get a valid Amadeus token
 	token, err := c.TokenManager.GetValidToken()

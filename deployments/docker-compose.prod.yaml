@@ -42,6 +42,19 @@ services:
       - ../config/user-service/prod.env
     restart: on-failure
 
+  blog-service:
+    build:
+      context: ../
+      dockerfile: build/docker/blog.Dockerfile
+      target: prod
+    container_name: blog-service-prod
+    ports:
+      - "7200:7200"
+    env_file:
+      - ../config/shared/prod.env
+      - ../config/blog-service/prod.env
+    restart: on-failure
+
   email-service:
     build:
       context: ../

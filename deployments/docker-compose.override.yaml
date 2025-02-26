@@ -62,6 +62,25 @@ services:
       - ../config/shared/dev.env
       - ../config/user-service/dev.env
 
+  blog-service:
+    build:
+      context: ../
+      dockerfile: build/docker/blog.Dockerfile
+      target: dev
+    container_name: blog-service-dev
+    volumes:
+      - ../cmd/blog-service:/blog-service/cmd/blog-service
+      - ../config/shared:/blog-service/config/shared
+      - ../internal/blog-service:/blog-service/internal/blog-service
+      - ../pkg/middlewares:/blog-service/pkg/middlewares
+      - ../pkg/security:/blog-service/pkg/security
+    ports:
+      - "7200:7200"
+    command: ["bin/air", "-c", "/blog-service/.air.toml"]
+    env_file:
+      - ../config/shared/dev.env
+      - ../config/blog-service/dev.env
+
   email-service:
     build:
       context: ../

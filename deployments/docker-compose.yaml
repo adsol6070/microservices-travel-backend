@@ -10,6 +10,10 @@ services:
   user-service:
     networks:
       - service-network
+      
+  blog-service:
+    networks:
+      - service-network
 
   email-service:
     networks:

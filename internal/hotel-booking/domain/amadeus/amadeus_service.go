@@ -180,76 +180,15 @@ func filterHotelsByRequest(hotelOffers []amadeusHotelModels.HotelOffer, req requ
 	return filteredHotels
 }
 
-func convertGuests(guests []request.Guest) []amadeusHotelModels.Guest {
-	var converted []amadeusHotelModels.Guest
-	for _, g := range guests {
-		converted = append(converted, amadeusHotelModels.Guest{
-			TID:       g.TID,
-			Title:     g.Title,
-			FirstName: g.FirstName,
-			LastName:  g.LastName,
-			Phone:     g.Phone,
-			Email:     g.Email,
-		})
-	}
-	return converted
-}
-
-func convertTravelAgent(agent request.TravelAgent) amadeusHotelModels.TravelAgent {
-	return amadeusHotelModels.TravelAgent{
-		Contact: amadeusHotelModels.Contact{
-			Email: agent.Contact.Email,
-		},
+func ConvertToAmadeusRequest(req request.HotelOrderRequest) amadeusHotelModels.AmadeusHotelOrderRequest {
+	return amadeusHotelModels.AmadeusHotelOrderRequest{
+		Data: req,
 	}
 }
 
-func convertRoomAssociations(associations []request.RoomAssociation) []response.RoomAssociation {
-	var converted []response.RoomAssociation
-	for _, a := range associations {
-		converted = append(converted, response.RoomAssociation{
-			HotelOfferID:    a.HotelOfferID,
-			GuestReferences: convertGuestReferences(a.GuestReferences),
-		})
-	}
-	return converted
-}
-
-func convertGuestReferences(refs []request.GuestReference) []response.GuestReference {
-	var converted []response.GuestReference
-	for _, r := range refs {
-		converted = append(converted, response.GuestReference{
-			GuestReference: r.GuestReference,
-		})
-	}
-	return converted
-}
-
-func convertPayment(payment request.Payment) amadeusHotelModels.PaymentDetails {
-	return amadeusHotelModels.PaymentDetails{
-		Method: payment.Method,
-		PaymentCard: amadeusHotelModels.Card{
-			PaymentCardInfo: amadeusHotelModels.PaymentCardInfo{
-				VendorCode: payment.PaymentCard.PaymentCardInfo.VendorCode,
-				CardNumber: payment.PaymentCard.PaymentCardInfo.CardNumber,
-				ExpiryDate: payment.PaymentCard.PaymentCardInfo.ExpiryDate,
-				HolderName: payment.PaymentCard.PaymentCardInfo.HolderName,
-			},
-		},
-	}
-}
-
-func (a *AmadeusService) CreateHotelBooking(requestBody request.HotelBookingRequest) (*amadeusHotelModels.HotelOrderResponseData, error) {
-
-	convertedRequest := amadeusHotelModels.HotelBookingReq{
-		Data: amadeusHotelModels.HotelOrderData{
-			Type:             requestBody.Data.Type,
-			Guests:           convertGuests(requestBody.Data.Guests),
-			TravelAgent:      convertTravelAgent(requestBody.Data.TravelAgent),
-			RoomAssociations: convertRoomAssociations(requestBody.Data.RoomAssociations),
-			Payment:          convertPayment(requestBody.Data.Payment),
-		},
-	}
-	booking, err := a.client.CreateHotelBooking(convertedRequest)
+func (a *AmadeusService) CreateHotelBooking(requestBody request.HotelOrderRequest) (*amadeusHotelModels.AmadeusBookingData, error) {
+	amadeusReq := ConvertToAmadeusRequest(requestBody)
+	booking, err := a.client.CreateHotelBooking(amadeusReq)
 	if err != nil {
 		return nil, err
 	}

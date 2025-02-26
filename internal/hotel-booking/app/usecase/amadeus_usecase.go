@@ -42,7 +42,7 @@ func (u *HotelUsecase) FetchHotelOffers(hotelIDs []string, adults int) ([]amadeu
 	return offers, nil
 }
 
-func (u *HotelUsecase) CreateHotelBooking(requestBody request.HotelBookingRequest) (*amadeusHotelModels.HotelOrderResponseData, error) {
+func (u *HotelUsecase) CreateHotelBooking(requestBody request.HotelOrderRequest) (*amadeusHotelModels.AmadeusBookingData, error) {
 	booking, err := u.service.CreateHotelBooking(requestBody)
 	if err != nil {
 		return nil, err

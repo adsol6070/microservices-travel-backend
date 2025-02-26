@@ -135,7 +135,7 @@ func getCachedData[T any](cache *redis.Client, cacheKey string, fetchFunc func()
 			log.Println("Cache hit: Returning data from Redis")
 			return data, nil
 		}
-	} 
+	}
 
 	log.Println("Cache miss: Fetching data from Amadeus API")
 	data, err := fetchFunc()
@@ -342,7 +342,7 @@ func (c *AmadeusClient) FetchHotelsByCity(cityCode string) ([]amadeusHotelModels
 	return hotels, nil
 }
 
-func (c *AmadeusClient) CreateHotelBooking(requestBody amadeusHotelModels.HotelBookingReq) (*amadeusHotelModels.HotelOrderResponseData, error) {
+func (c *AmadeusClient) CreateHotelBooking(requestBody amadeusHotelModels.AmadeusHotelOrderRequest) (*amadeusHotelModels.AmadeusBookingData, error) {
 	token, err := c.TokenManager.GetValidToken()
 	if err != nil {
 		return nil, fmt.Errorf("failed to retrieve Amadeus token: %w", err)
@@ -354,7 +354,7 @@ func (c *AmadeusClient) CreateHotelBooking(requestBody amadeusHotelModels.HotelB
 		return nil, err
 	}
 
-	var result amadeusHotelModels.HotelBookingResp
+	var result amadeusHotelModels.AmadeusHotelOrderResponse
 	if err := json.Unmarshal(respBody, &result); err != nil {
 		return nil, fmt.Errorf("failed to parse hotel booking response: %w", err)
 	}

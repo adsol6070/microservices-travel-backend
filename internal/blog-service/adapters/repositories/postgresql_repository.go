@@ -1,6 +1,7 @@
 package repositories
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"log"
@@ -43,65 +44,52 @@ func NewPostgreSQLBlogRepository() (*PostgreSQLBlogRepository, error) {
 	return &PostgreSQLBlogRepository{db: db}, nil
 }
 
-func (repo *PostgreSQLBlogRepository) Create(blog models.Blog) (*models.Blog, error) {
+func (r *PostgreSQLBlogRepository) Create(ctx context.Context, blog *models.Blog) (*models.Blog, error) {
 	if blog.ID == "" {
 		blog.ID = uuid.New().String()
 	}
-	if err := repo.db.Create(&blog).Error; err != nil {
+	if err := r.db.WithContext(ctx).Create(blog).Error; err != nil {
 		return nil, err
 	}
-	return &blog, nil
+	return blog, nil
 }
 
-func (repo *PostgreSQLBlogRepository) GetByID(id string) (*models.Blog, error) {
+func (r *PostgreSQLBlogRepository) GetByID(ctx context.Context, id string) (*models.Blog, error) {
 	var blog models.Blog
-	if err := repo.db.First(&blog, "id = ?", id).Error; err != nil {
+	if err := r.db.WithContext(ctx).First(&blog, "id = ?", id).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, errors.New("blog not found")
+			return nil, nil
 		}
 		return nil, err
 	}
 	return &blog, nil
 }
 
-func (repo *PostgreSQLBlogRepository) GetAll() ([]models.Blog, error) {
-	var blogs []models.Blog
-	if err := repo.db.Find(&blogs).Error; err != nil {
+func (r *PostgreSQLBlogRepository) GetAll(ctx context.Context) ([]*models.Blog, error) {
+	var blogs []*models.Blog
+	if err := r.db.WithContext(ctx).Find(&blogs).Error; err != nil {
 		return nil, err
 	}
 	return blogs, nil
 }
 
-func (repo *PostgreSQLBlogRepository) GetByAuthor(authorID string) ([]models.Blog, error) {
-	var blogs []models.Blog
-	if err := repo.db.Where("author_id = ?", authorID).Find(&blogs).Error; err != nil {
+func (r *PostgreSQLBlogRepository) GetByAuthor(ctx context.Context, authorID string) ([]*models.Blog, error) {
+	var blogs []*models.Blog
+	if err := r.db.WithContext(ctx).Where("author_id = ?", authorID).Find(&blogs).Error; err != nil {
 		return nil, err
 	}
 	return blogs, nil
 }
 
-func (repo *PostgreSQLBlogRepository) Update(id string, blog models.Blog) (*models.Blog, error) {
-	var existingBlog models.Blog
-	if err := repo.db.First(&existingBlog, "id = ?", id).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, errors.New("blog not found")
-		}
+func (r *PostgreSQLBlogRepository) Update(ctx context.Context, blog *models.Blog) (*models.Blog, error) {
+	if err := r.db.WithContext(ctx).Save(blog).Error; err != nil {
 		return nil, err
 	}
-
-	if err := repo.db.Model(&existingBlog).Updates(blog).Error; err != nil {
-		return nil, err
-	}
-
-	if err := repo.db.First(&existingBlog, "id = ?", id).Error; err != nil {
-		return nil, err
-	}
-
-	return &existingBlog, nil
+	return blog, nil
 }
 
-func (repo *PostgreSQLBlogRepository) Delete(id string) error {
-	if err := repo.db.Delete(&models.Blog{}, "id = ?", id).Error; err != nil {
+func (r *PostgreSQLBlogRepository) Delete(ctx context.Context, id string) error {
+	if err := r.db.WithContext(ctx).Delete(&models.Blog{}, "id = ?", id).Error; err != nil {
 		return err
 	}
 	return nil

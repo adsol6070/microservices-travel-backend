@@ -34,9 +34,10 @@ func (h *BlogHandler) CreateBlog(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "invalid request payload", http.StatusBadRequest)
 		return
 	}
+
 	blog.ID = uuid.New().String()
 
-	createdBlog, err := h.blogService.CreateBlog(blog)
+	createdBlog, err := h.blogService.CreateBlog(r.Context(), &blog)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -48,7 +49,7 @@ func (h *BlogHandler) CreateBlog(w http.ResponseWriter, r *http.Request) {
 
 func (h *BlogHandler) GetBlogByID(w http.ResponseWriter, r *http.Request) {
 	id := mux.Vars(r)["id"]
-	blog, err := h.blogService.GetBlogByID(id)
+	blog, err := h.blogService.GetBlogByID(r.Context(), id)
 	if err != nil {
 		http.Error(w, "blog not found", http.StatusNotFound)
 		return
@@ -58,7 +59,7 @@ func (h *BlogHandler) GetBlogByID(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *BlogHandler) GetAllBlogs(w http.ResponseWriter, r *http.Request) {
-	blogs, err := h.blogService.GetAllBlogs()
+	blogs, err := h.blogService.GetAllBlogs(r.Context())
 	if err != nil {
 		http.Error(w, "could not retrieve blogs", http.StatusInternalServerError)
 		return
@@ -69,7 +70,7 @@ func (h *BlogHandler) GetAllBlogs(w http.ResponseWriter, r *http.Request) {
 
 func (h *BlogHandler) GetBlogsByAuthorID(w http.ResponseWriter, r *http.Request) {
 	authorID := mux.Vars(r)["authorID"]
-	blogs, err := h.blogService.GetBlogsByAuthor(authorID)
+	blogs, err := h.blogService.GetBlogsByAuthor(r.Context(), authorID)
 	if err != nil {
 		http.Error(w, "could not retrieve blogs", http.StatusInternalServerError)
 		return
@@ -86,7 +87,7 @@ func (h *BlogHandler) UpdateBlog(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	updatedBlog, err := h.blogService.UpdateBlog(id, blog)
+	updatedBlog, err := h.blogService.UpdateBlog(r.Context(), id, &blog)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -98,7 +99,7 @@ func (h *BlogHandler) UpdateBlog(w http.ResponseWriter, r *http.Request) {
 
 func (h *BlogHandler) DeleteBlog(w http.ResponseWriter, r *http.Request) {
 	id := mux.Vars(r)["id"]
-	if err := h.blogService.DeleteBlog(id); err != nil {
+	if err := h.blogService.DeleteBlog(r.Context(), id); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}

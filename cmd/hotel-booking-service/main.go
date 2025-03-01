@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"os"
 
-	"microservices-travel-backend/internal/hotel-booking/app/usecase" 
+	"microservices-travel-backend/internal/hotel-booking/app/usecase"
 	"microservices-travel-backend/internal/hotel-booking/domain/amadeus"
 	"microservices-travel-backend/internal/hotel-booking/domain/google"
 	"microservices-travel-backend/internal/hotel-booking/infrastructure/handlers"
@@ -12,7 +12,7 @@ import (
 	"microservices-travel-backend/internal/shared/api_provider/google/places"
 	"microservices-travel-backend/pkg/logger"
 
-	"github.com/gorilla/mux" 
+	"github.com/gorilla/mux"
 	"go.uber.org/zap"
 )
 

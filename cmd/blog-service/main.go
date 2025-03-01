@@ -23,7 +23,7 @@ func main() {
 	router := mux.NewRouter()
 	blogHandler.RegisterRoutes(router)
 
-	port := ":7200" 
+	port := ":7200"
 	log.Printf("Starting blog service on port %s...", port)
 	if err := http.ListenAndServe(port, router); err != nil {
 		log.Fatalf("Failed to start blog service: %v", err)

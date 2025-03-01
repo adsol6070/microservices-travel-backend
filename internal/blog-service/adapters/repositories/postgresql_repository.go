@@ -81,7 +81,7 @@ func (r *PostgreSQLBlogRepository) GetByAuthor(ctx context.Context, authorID str
 	return blogs, nil
 }
 
-func (r *PostgreSQLBlogRepository) Update(ctx context.Context, blog *models.Blog) (*models.Blog, error) {
+func (r *PostgreSQLBlogRepository) Update(ctx context.Context, id string, blog *models.Blog) (*models.Blog, error) {
 	if err := r.db.WithContext(ctx).Save(blog).Error; err != nil {
 		return nil, err
 	}

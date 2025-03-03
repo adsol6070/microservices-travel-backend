@@ -48,7 +48,7 @@ func (r *PostgreSQLBlogRepository) Create(ctx context.Context, blog *models.Blog
 	if blog.ID == "" {
 		blog.ID = uuid.New().String()
 	}
-	if err := r.db.WithContext(ctx).Create(blog).Error; err != nil {
+	if err := r.db.WithContext(ctx).Table("blogs").Create(blog).Error; err != nil {
 		return nil, err
 	}
 	return blog, nil
@@ -56,7 +56,7 @@ func (r *PostgreSQLBlogRepository) Create(ctx context.Context, blog *models.Blog
 
 func (r *PostgreSQLBlogRepository) GetByID(ctx context.Context, id string) (*models.Blog, error) {
 	var blog models.Blog
-	if err := r.db.WithContext(ctx).First(&blog, "id = ?", id).Error; err != nil {
+	if err := r.db.WithContext(ctx).Table("blogs").First(&blog, "id = ?", id).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil
 		}
@@ -67,7 +67,7 @@ func (r *PostgreSQLBlogRepository) GetByID(ctx context.Context, id string) (*mod
 
 func (r *PostgreSQLBlogRepository) GetAll(ctx context.Context) ([]*models.Blog, error) {
 	var blogs []*models.Blog
-	if err := r.db.WithContext(ctx).Find(&blogs).Error; err != nil {
+	if err := r.db.WithContext(ctx).Table("blogs").Find(&blogs).Error; err != nil {
 		return nil, err
 	}
 	return blogs, nil
@@ -75,21 +75,21 @@ func (r *PostgreSQLBlogRepository) GetAll(ctx context.Context) ([]*models.Blog, 
 
 func (r *PostgreSQLBlogRepository) GetByAuthor(ctx context.Context, authorID string) ([]*models.Blog, error) {
 	var blogs []*models.Blog
-	if err := r.db.WithContext(ctx).Where("author_id = ?", authorID).Find(&blogs).Error; err != nil {
+	if err := r.db.WithContext(ctx).Table("blogs").Where("author_id = ?", authorID).Find(&blogs).Error; err != nil {
 		return nil, err
 	}
 	return blogs, nil
 }
 
 func (r *PostgreSQLBlogRepository) Update(ctx context.Context, id string, blog *models.Blog) (*models.Blog, error) {
-	if err := r.db.WithContext(ctx).Save(blog).Error; err != nil {
+	if err := r.db.WithContext(ctx).Table("blogs").Save(blog).Error; err != nil {
 		return nil, err
 	}
 	return blog, nil
 }
 
 func (r *PostgreSQLBlogRepository) Delete(ctx context.Context, id string) error {
-	if err := r.db.WithContext(ctx).Delete(&models.Blog{}, "id = ?", id).Error; err != nil {
+	if err := r.db.WithContext(ctx).Table("blogs").Delete(&models.Blog{}, "id = ?", id).Error; err != nil {
 		return err
 	}
 	return nil

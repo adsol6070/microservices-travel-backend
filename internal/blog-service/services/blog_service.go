@@ -3,7 +3,6 @@ package services
 import (
 	"context"
 	"errors"
-	"log"
 	"microservices-travel-backend/internal/blog-service/domain/models"
 	"microservices-travel-backend/internal/blog-service/domain/ports"
 	"time"
@@ -24,8 +23,6 @@ func (s *BlogService) CreateBlog(ctx context.Context, blogDetails *models.Blog) 
 
 	blogDetails.CreatedAt = time.Now()
 	blogDetails.UpdatedAt = blogDetails.CreatedAt
-
-	log.Print("Creating blog", blogDetails)
 
 	createdBlog, err := s.blogRepo.Create(ctx, blogDetails)
 	if err != nil {

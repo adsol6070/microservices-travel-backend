@@ -48,6 +48,9 @@ func (r *PostgreSQLBlogRepository) Create(ctx context.Context, blog *models.Blog
 	if blog.ID == "" {
 		blog.ID = uuid.New().String()
 	}
+
+	log.Println("Creating blog:", blog)
+
 	if err := r.db.WithContext(ctx).Table("blogs").Create(blog).Error; err != nil {
 		return nil, err
 	}

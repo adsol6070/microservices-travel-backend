@@ -108,86 +108,26 @@ docker-compose-prod-up: ## Start production services using Docker Compose
 docker-compose-prod-down: ## Stop production services using Docker Compose
 	docker-compose -f $(DOCKER_COMPOSE) -f $(DOCKER_COMPOSE_PROD) down
 
-## Migrations
+## Run a migration for all services
+run-migrate: ## Run all migrations
+	@echo "Running all migrations"
+	$(MIGRATION_TOOL) -path=$(MIGRATION_DIR) -database $(DATABASE_URL) up
 
-# Migration base command setup
-MIGRATION_DIR_FLIGHT = $(MIGRATION_DIR)/flight-booking
-MIGRATION_DIR_HOTEL = $(MIGRATION_DIR)/hotel-booking
-MIGRATION_DIR_USER = $(MIGRATION_DIR)/user-service
-MIGRATION_DIR_BLOG = $(MIGRATION_DIR)/blog-service
+## Revert a migration for all services
+migrate-down: ## Revert all migrations
+	@echo "Reverting all migrations"
+	$(MIGRATION_TOOL) -path=$(MIGRATION_DIR) -database $(DATABASE_URL) down
 
-# Run a migration for the hotel-booking service with a filename argument
-migrate-hotel: ## Run migration for the hotel-booking service
-	@echo "Running migration for hotel-booking"
-	$(MIGRATION_TOOL) -path=$(MIGRATION_DIR_HOTEL) -database $(DATABASE_URL) up
-
-# Run a migration for the flight-booking service with a filename argument
-migrate-flight: ## Run migration for flight-booking
-	@echo "Running migration for flight-booking"
-	$(MIGRATION_TOOL) -path=$(MIGRATION_DIR_FLIGHT) -database $(DATABASE_URL) up
-
-# Run a migration for the user service with a filename argument
-migrate-user: ## Run migration for the user service
-	@echo "Running migration for user-service"
-	$(MIGRATION_TOOL) -path=$(MIGRATION_DIR_USER) -database $(DATABASE_URL) up
-
-# Run a migration for the blog service with a filename argument
-migrate-blog: ## Run migration for the user service
-	@echo "Running migration for blog-service"
-	$(MIGRATION_TOOL) -path=$(MIGRATION_DIR_BLOG) -database $(DATABASE_URL) up
-
-# Revert a migration for the hotel-booking service with a filename argument
-migrate-hotel-down: ## Revert migration for the hotel-booking service
-	@echo "Reverting migration for hotel-booking"
-	$(MIGRATION_TOOL) -path=$(MIGRATION_DIR_HOTEL) -database $(DATABASE_URL) down
-
-# Revert a migration for the flight-booking service with a filename argument
-migrate-flight-down: ## Revert migration for flight-booking
-	@echo "Reverting migration for flight-booking"
-	$(MIGRATION_TOOL) -path=$(MIGRATION_DIR_FLIGHT) -database $(DATABASE_URL) down
-
-# Revert a migration for the user service with a filename argument
-migrate-user-down: ## Revert migration for the user service
-	@echo "Reverting migration for user-service"
-	$(MIGRATION_TOOL) -path=$(MIGRATION_DIR_USER) -database $(DATABASE_URL) down
-
-# Revert a migration for the blog service with a filename argument
-migrate-blog-down: ## Revert migration for the user service
-	@echo "Reverting migration for blog-service"
-	$(MIGRATION_TOOL) -path=$(MIGRATION_DIR_BLOG) -database $(DATABASE_URL) down
-
-## Generate a migration file (up and down) for hotel-booking
-generate-migration-hotel: ## Generate a migration for hotel-booking
+## Generate a migration file (up and down)
+generate-migration: ## Generate a migration (usage: make generate-migration)
 	@read -p "Enter migration name: " MIGRATION_NAME; \
-	echo "Generating migration for hotel-booking"; \
-	mkdir -p $(MIGRATION_DIR_HOTEL); \
-	$(MIGRATION_TOOL) create -ext sql -dir $(MIGRATION_DIR_HOTEL) -seq $$MIGRATION_NAME
-
-## Generate a migration file (up and down) for flight-booking
-generate-migration-flight: ## Generate a migration for flight-booking
-	@read -p "Enter migration name: " MIGRATION_NAME; \
-	echo "Generating migration for flight-booking"; \
-	mkdir -p $(MIGRATION_DIR_FLIGHT); \
-	$(MIGRATION_TOOL) create -ext sql -dir $(MIGRATION_DIR_FLIGHT) -seq $$MIGRATION_NAME
-
-## Generate a migration file (up and down) for flight-booking
-generate-migration-user: ## Generate a migration for flight-booking
-	@read -p "Enter migration name: " MIGRATION_NAME; \
-	echo "Generating migration for user-service"; \
-	mkdir -p $(MIGRATION_DIR_USER); \
-	$(MIGRATION_TOOL) create -ext sql -dir $(MIGRATION_DIR_USER) -seq $$MIGRATION_NAME
-
-## Generate a migration file (up and down) for flight-booking
-generate-migration-blog: ## Generate a migration for flight-booking
-	@read -p "Enter migration name: " MIGRATION_NAME; \
-	echo "Generating migration for blog-service"; \
-	mkdir -p $(MIGRATION_DIR_BLOG); \
-	$(MIGRATION_TOOL) create -ext sql -dir $(MIGRATION_DIR_BLOG) -seq $$MIGRATION_NAME
+	echo "Generating migration for $$MIGRATION_NAME in $(MIGRATION_DIR)"; \
+	$(MIGRATION_TOOL) create -ext sql -dir $(MIGRATION_DIR) -seq $$MIGRATION_NAME
 
 # The user should provide the name of the migration when running these commands:
 # Example: make generate-migration-hotel MIGRATION_NAME=create_hotels_table
 
 .PHONY: all start deploy-all deploy-$(SERVICE_NAME1) deploy-$(SERVICE_NAME2) \
     forward-$(SERVICE_NAME1) forward-$(SERVICE_NAME2) clean stop docker-compose-up docker-compose-down \
-    docker-compose-prod-up docker-compose-prod-down migrate-hotel migrate-flight migrate-hotel-down migrate-flight-down \
-    generate-migration-hotel generate-migration-flight
+    docker-compose-prod-up docker-compose-prod-down migrate migrate-down \
+    generate-migration

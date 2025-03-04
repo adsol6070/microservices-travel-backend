@@ -1,338 +1,196 @@
-# :cloud: Air - Live reload for Go apps
+[![GitHub Workflow Status (branch)](https://img.shields.io/github/actions/workflow/status/golang-migrate/migrate/ci.yaml?branch=master)](https://github.com/golang-migrate/migrate/actions/workflows/ci.yaml?query=branch%3Amaster)
+[![GoDoc](https://pkg.go.dev/badge/github.com/golang-migrate/migrate)](https://pkg.go.dev/github.com/golang-migrate/migrate/v4)
+[![Coverage Status](https://img.shields.io/coveralls/github/golang-migrate/migrate/master.svg)](https://coveralls.io/github/golang-migrate/migrate?branch=master)
+[![packagecloud.io](https://img.shields.io/badge/deb-packagecloud.io-844fec.svg)](https://packagecloud.io/golang-migrate/migrate?filter=debs)
+[![Docker Pulls](https://img.shields.io/docker/pulls/migrate/migrate.svg)](https://hub.docker.com/r/migrate/migrate/)
+![Supported Go Versions](https://img.shields.io/badge/Go-1.22%2C%201.23-lightgrey.svg)
+[![GitHub Release](https://img.shields.io/github/release/golang-migrate/migrate.svg)](https://github.com/golang-migrate/migrate/releases)
+[![Go Report Card](https://goreportcard.com/badge/github.com/golang-migrate/migrate/v4)](https://goreportcard.com/report/github.com/golang-migrate/migrate/v4)
 
-[![Go](https://github.com/air-verse/air/actions/workflows/release.yml/badge.svg)](https://github.com/air-verse/air/actions?query=workflow%3AGo+branch%3Amaster) [![Codacy Badge](https://app.codacy.com/project/badge/Grade/dcb95264cc504cad9c2a3d8b0795a7f8)](https://www.codacy.com/gh/air-verse/air/dashboard?utm_source=github.com&utm_medium=referral&utm_content=air-verse/air&utm_campaign=Badge_Grade) [![Go Report Card](https://goreportcard.com/badge/github.com/air-verse/air)](https://goreportcard.com/report/github.com/air-verse/air) [![codecov](https://codecov.io/gh/air-verse/air/branch/master/graph/badge.svg)](https://codecov.io/gh/air-verse/air)
+# migrate
 
-![air](docs/air.png)
+__Database migrations written in Go. Use as [CLI](#cli-usage) or import as [library](#use-in-your-go-project).__
 
-English | [简体中文](README-zh_cn.md) | [繁體中文](README-zh_tw.md)
+* Migrate reads migrations from [sources](#migration-sources)
+   and applies them in correct order to a [database](#databases).
+* Drivers are "dumb", migrate glues everything together and makes sure the logic is bulletproof.
+   (Keeps the drivers lightweight, too.)
+* Database drivers don't assume things or try to correct user input. When in doubt, fail.
 
-## Motivation
+Forked from [mattes/migrate](https://github.com/mattes/migrate)
 
-When I started developing websites in Go and using [gin](https://github.com/gin-gonic/gin) framework, it was a pity
-that gin lacked a live-reloading function. So I searched around and tried [fresh](https://github.com/pilu/fresh), it seems not much
-flexible, so I intended to rewrite it better. Finally, Air's born.
-In addition, great thanks to [pilu](https://github.com/pilu), no fresh, no air :)
+## Databases
 
-Air is yet another live-reloading command line utility for developing Go applications. Run `air` in your project root directory, leave it alone,
-and focus on your code.
+Database drivers run migrations. [Add a new database?](database/driver.go)
 
-Note: This tool has nothing to do with hot-deploy for production.
+* [PostgreSQL](database/postgres)
+* [PGX v4](database/pgx)
+* [PGX v5](database/pgx/v5)
+* [Redshift](database/redshift)
+* [Ql](database/ql)
+* [Cassandra / ScyllaDB](database/cassandra)
+* [SQLite](database/sqlite)
+* [SQLite3](database/sqlite3) ([todo #165](https://github.com/mattes/migrate/issues/165))
+* [SQLCipher](database/sqlcipher)
+* [MySQL / MariaDB](database/mysql)
+* [Neo4j](database/neo4j)
+* [MongoDB](database/mongodb)
+* [CrateDB](database/crate) ([todo #170](https://github.com/mattes/migrate/issues/170))
+* [Shell](database/shell) ([todo #171](https://github.com/mattes/migrate/issues/171))
+* [Google Cloud Spanner](database/spanner)
+* [CockroachDB](database/cockroachdb)
+* [YugabyteDB](database/yugabytedb)
+* [ClickHouse](database/clickhouse)
+* [Firebird](database/firebird)
+* [MS SQL Server](database/sqlserver)
+* [rqlite](database/rqlite)
 
-## Features
+### Database URLs
 
-- Colorful log output
-- Customize build or any command
-- Support excluding subdirectories
-- Allow watching new directories after Air started
-- Better building process
+Database connection strings are specified via URLs. The URL format is driver dependent but generally has the form: `dbdriver://username:password@host:port/dbname?param1=true&param2=false`
 
-### Overwrite specify configuration from arguments
+Any [reserved URL characters](https://en.wikipedia.org/wiki/Percent-encoding#Percent-encoding_reserved_characters) need to be escaped. Note, the `%` character also [needs to be escaped](https://en.wikipedia.org/wiki/Percent-encoding#Percent-encoding_the_percent_character)
 
-Support air config fields as arguments:
+Explicitly, the following characters need to be escaped:
+`!`, `#`, `$`, `%`, `&`, `'`, `(`, `)`, `*`, `+`, `,`, `/`, `:`, `;`, `=`, `?`, `@`, `[`, `]`
 
-You can view the available command-line arguments by running the following commands:  
-
-```
-air -h
-```
-or  
-```
-air --help
-```
-
-If you want to config build command and run command, you can use like the following command without the config file:
-
-```shell
-air --build.cmd "go build -o bin/api cmd/run.go" --build.bin "./bin/api"
-```
-
-Use a comma to separate items for arguments that take a list as input:
-
-```shell
-air --build.cmd "go build -o bin/api cmd/run.go" --build.bin "./bin/api" --build.exclude_dir "templates,build"
-```
-
-## Installation
-
-### Via `go install` (Recommended)
-
-With go 1.23 or higher:
+It's easiest to always run the URL parts of your DB connection URL (e.g. username, password, etc) through an URL encoder. See the example Python snippets below:
 
 ```bash
-go install github.com/air-verse/air@latest
+$ python3 -c 'import urllib.parse; print(urllib.parse.quote(input("String to encode: "), ""))'
+String to encode: FAKEpassword!#$%&'()*+,/:;=?@[]
+FAKEpassword%21%23%24%25%26%27%28%29%2A%2B%2C%2F%3A%3B%3D%3F%40%5B%5D
+$ python2 -c 'import urllib; print urllib.quote(raw_input("String to encode: "), "")'
+String to encode: FAKEpassword!#$%&'()*+,/:;=?@[]
+FAKEpassword%21%23%24%25%26%27%28%29%2A%2B%2C%2F%3A%3B%3D%3F%40%5B%5D
+$
 ```
 
-### Via install.sh
+## Migration Sources
 
-```shell
-# binary will be $(go env GOPATH)/bin/air
-curl -sSfL https://raw.githubusercontent.com/air-verse/air/master/install.sh | sh -s -- -b $(go env GOPATH)/bin
+Source drivers read migrations from local or remote sources. [Add a new source?](source/driver.go)
 
-# or install it into ./bin/
-curl -sSfL https://raw.githubusercontent.com/air-verse/air/master/install.sh | sh -s
+* [Filesystem](source/file) - read from filesystem
+* [io/fs](source/iofs) - read from a Go [io/fs](https://pkg.go.dev/io/fs#FS)
+* [Go-Bindata](source/go_bindata) - read from embedded binary data ([jteeuwen/go-bindata](https://github.com/jteeuwen/go-bindata))
+* [pkger](source/pkger) - read from embedded binary data ([markbates/pkger](https://github.com/markbates/pkger))
+* [GitHub](source/github) - read from remote GitHub repositories
+* [GitHub Enterprise](source/github_ee) - read from remote GitHub Enterprise repositories
+* [Bitbucket](source/bitbucket) - read from remote Bitbucket repositories
+* [Gitlab](source/gitlab) - read from remote Gitlab repositories
+* [AWS S3](source/aws_s3) - read from Amazon Web Services S3
+* [Google Cloud Storage](source/google_cloud_storage) - read from Google Cloud Platform Storage
 
-air -v
+## CLI usage
+
+* Simple wrapper around this library.
+* Handles ctrl+c (SIGINT) gracefully.
+* No config search paths, no config files, no magic ENV var injections.
+
+__[CLI Documentation](cmd/migrate)__
+
+### Basic usage
+
+```bash
+$ migrate -source file://path/to/migrations -database postgres://localhost:5432/database up 2
 ```
 
-### Via [goblin.run](https://goblin.run)
+### Docker usage
 
-```shell
-# binary will be /usr/local/bin/air
-curl -sSfL https://goblin.run/github.com/air-verse/air | sh
-
-# to put to a custom path
-curl -sSfL https://goblin.run/github.com/air-verse/air | PREFIX=/tmp sh
+```bash
+$ docker run -v {{ migration dir }}:/migrations --network host migrate/migrate
+    -path=/migrations/ -database postgres://localhost:5432/database up 2
 ```
 
-### Docker/Podman
+## Use in your Go project
 
-Please pull this Docker image [cosmtrek/air](https://hub.docker.com/r/cosmtrek/air).
+* API is stable and frozen for this release (v3 & v4).
+* Uses [Go modules](https://golang.org/cmd/go/#hdr-Modules__module_versions__and_more) to manage dependencies.
+* To help prevent database corruptions, it supports graceful stops via `GracefulStop chan bool`.
+* Bring your own logger.
+* Uses `io.Reader` streams internally for low memory overhead.
+* Thread-safe and no goroutine leaks.
 
-```shell
-docker/podman run -it --rm \
-    -w "<PROJECT>" \
-    -e "air_wd=<PROJECT>" \
-    -v $(pwd):<PROJECT> \
-    -p <PORT>:<APP SERVER PORT> \
-    cosmtrek/air
-    -c <CONF>
-```
+__[Go Documentation](https://pkg.go.dev/github.com/golang-migrate/migrate/v4)__
 
-#### Docker/Podman .${SHELL}rc
+```go
+import (
+    "github.com/golang-migrate/migrate/v4"
+    _ "github.com/golang-migrate/migrate/v4/database/postgres"
+    _ "github.com/golang-migrate/migrate/v4/source/github"
+)
 
-if you want to use air continuously like a normal app, you can create a function in your ${SHELL}rc (Bash, Zsh, etc…)
-
-```shell
-air() {
-  podman/docker run -it --rm \
-    -w "$PWD" -v "$PWD":"$PWD" \
-    -p "$AIR_PORT":"$AIR_PORT" \
-    docker.io/cosmtrek/air "$@"
+func main() {
+    m, err := migrate.New(
+        "github://mattes:personal-access-token@mattes/migrate_test",
+        "postgres://localhost:5432/database?sslmode=enable")
+    m.Steps(2)
 }
 ```
 
-`<PROJECT>` is your project path in container, eg: /go/example
-if you want to enter the container, Please add --entrypoint=bash.
+Want to use an existing database client?
 
-<details>
-  <summary>For example</summary>
+```go
+import (
+    "database/sql"
+    _ "github.com/lib/pq"
+    "github.com/golang-migrate/migrate/v4"
+    "github.com/golang-migrate/migrate/v4/database/postgres"
+    _ "github.com/golang-migrate/migrate/v4/source/file"
+)
 
-One of my project runs in Docker:
-
-```shell
-docker run -it --rm \
-  -w "/go/src/github.com/cosmtrek/hub" \
-  -v $(pwd):/go/src/github.com/cosmtrek/hub \
-  -p 9090:9090 \
-  cosmtrek/air
+func main() {
+    db, err := sql.Open("postgres", "postgres://localhost:5432/database?sslmode=enable")
+    driver, err := postgres.WithInstance(db, &postgres.Config{})
+    m, err := migrate.NewWithDatabaseInstance(
+        "file:///migrations",
+        "postgres", driver)
+    m.Up() // or m.Steps(2) if you want to explicitly set the number of migrations to run
+}
 ```
 
-Another example:
+## Getting started
 
-```shell
-cd /go/src/github.com/cosmtrek/hub
-AIR_PORT=8080 air -c "config.toml"
+Go to [getting started](GETTING_STARTED.md)
+
+## Tutorials
+
+* [CockroachDB](database/cockroachdb/TUTORIAL.md)
+* [PostgreSQL](database/postgres/TUTORIAL.md)
+
+(more tutorials to come)
+
+## Migration files
+
+Each migration has an up and down migration. [Why?](FAQ.md#why-two-separate-files-up-and-down-for-a-migration)
+
+```bash
+1481574547_create_users_table.up.sql
+1481574547_create_users_table.down.sql
 ```
 
-this will replace `$PWD` with the current directory, `$AIR_PORT` is the port where to publish and `$@` is to accept arguments of the application itself for example -c
+[Best practices: How to write migrations.](MIGRATIONS.md)
 
-</details>
+## Coming from another db migration tool?
 
-## Usage
+Check out [migradaptor](https://github.com/musinit/migradaptor/).
+*Note: migradaptor is not affiliated or supported by this project*
 
-For less typing, you could add `alias air='~/.air'` to your `.bashrc` or `.zshrc`.
+## Versions
 
-First enter into your project
+Version | Supported? | Import | Notes
+--------|------------|--------|------
+**master** | :white_check_mark: | `import "github.com/golang-migrate/migrate/v4"` | New features and bug fixes arrive here first |
+**v4** | :white_check_mark: | `import "github.com/golang-migrate/migrate/v4"` | Used for stable releases |
+**v3** | :x: | `import "github.com/golang-migrate/migrate"` (with package manager) or `import "gopkg.in/golang-migrate/migrate.v3"` (not recommended) | **DO NOT USE** - No longer supported |
 
-```shell
-cd /path/to/your_project
-```
+## Development and Contributing
 
-The simplest usage is run
+Yes, please! [`Makefile`](Makefile) is your friend,
+read the [development guide](CONTRIBUTING.md).
 
-```shell
-# firstly find `.air.toml` in current directory, if not found, use defaults
-air -c .air.toml
-```
+Also have a look at the [FAQ](FAQ.md).
 
-You can initialize the `.air.toml` configuration file to the current directory with the default settings running the following command.
+---
 
-```shell
-air init
-```
-
-After this, you can just run the `air` command without additional arguments, and it will use the `.air.toml` file for configuration.
-
-```shell
-air
-```
-
-For modifying the configuration refer to the [air_example.toml](air_example.toml) file.
-
-### Runtime arguments
-
-You can pass arguments for running the built binary by adding them after the air command.
-
-```shell
-# Will run ./tmp/main bench
-air bench
-
-# Will run ./tmp/main server --port 8080
-air server --port 8080
-```
-
-You can separate the arguments passed for the air command and the built binary with `--` argument.
-
-```shell
-# Will run ./tmp/main -h
-air -- -h
-
-# Will run air with custom config and pass -h argument to the built binary
-air -c .air.toml -- -h
-```
-
-### Docker Compose
-
-```yaml
-services:
-  my-project-with-air:
-    image: cosmtrek/air
-    # working_dir value has to be the same of mapped volume
-    working_dir: /project-package
-    ports:
-      - <any>:<any>
-    environment:
-      - ENV_A=${ENV_A}
-      - ENV_B=${ENV_B}
-      - ENV_C=${ENV_C}
-    volumes:
-      - ./project-relative-path/:/project-package/
-```
-
-### Debug
-
-`air -d` prints all logs.
-
-## Installation and Usage for Docker users who don't want to use air image
-
-`Dockerfile`
-
-```Dockerfile
-# Choose whatever you want, version >= 1.16
-FROM golang:1.23-alpine
-
-WORKDIR /app
-
-RUN go install github.com/air-verse/air@latest
-
-COPY go.mod go.sum ./
-RUN go mod download
-
-CMD ["air", "-c", ".air.toml"]
-```
-
-`docker-compose.yaml`
-
-```yaml
-version: "3.8"
-services:
-  web:
-    build:
-      context: .
-      # Correct the path to your Dockerfile
-      dockerfile: Dockerfile
-    ports:
-      - 8080:3000
-    # Important to bind/mount your codebase dir to /app dir for live reload
-    volumes:
-      - ./:/app
-```
-
-## Q&A
-
-### "command not found: air" or "No such file or directory"
-
-```shell
-export GOPATH=$HOME/xxxxx
-export PATH=$PATH:$GOROOT/bin:$GOPATH/bin
-export PATH=$PATH:$(go env GOPATH)/bin #Confirm this line in your .profile and make sure to source the .profile if you add it!!!
-```
-
-### Error under wsl when ' is included in the bin
-
-Should use `\` to escape the `'` in the bin. related issue: [#305](https://github.com/air-verse/air/issues/305)
-
-### Question: how to do hot compile only and do not run anything?
-
-[#365](https://github.com/air-verse/air/issues/365)
-
-```toml
-[build]
-  cmd = "/usr/bin/true"
-```
-
-### How to Reload the Browser Automatically on Static File Changes
-
-Refer to issue [#512](https://github.com/air-verse/air/issues/512) for additional details.
-
-- Ensure your static files in `include_dir`, `include_ext`, or `include_file`.
-- Ensure your HTML has a `</body>` tag
-- Activate the proxy by configuring the following config:
-
-```toml
-[proxy]
-  enabled = true
-  proxy_port = <air proxy port>
-  app_port = <your server port>
-```
-
-## Development
-
-Please note that it requires Go 1.16+ since I use `go mod` to manage dependencies.
-
-```shell
-# Fork this project
-
-# Clone it
-mkdir -p $GOPATH/src/github.com/cosmtrek
-cd $GOPATH/src/github.com/cosmtrek
-git clone git@github.com:<YOUR USERNAME>/air.git
-
-# Install dependencies
-cd air
-make ci
-
-# Explore it and happy hacking!
-make install
-```
-
-Pull requests are welcome.
-
-### Release
-
-```shell
-# Checkout to master
-git checkout master
-
-# Add the version that needs to be released
-git tag v1.xx.x
-
-# Push to remote
-git push origin v1.xx.x
-
-# The CI will process and release a new version. Wait about 5 min, and you can fetch the latest version
-```
-
-## Star History
-
-[![Star History Chart](https://api.star-history.com/svg?repos=air-verse/air&type=Date)](https://star-history.com/#air-verse/air&Date)
-
-## Sponsor
-
-[![Buy Me A Coffee](https://cdn.buymeacoffee.com/buttons/default-orange.png)](https://www.buymeacoffee.com/cosmtrek)
-
-Give huge thanks to lots of supporters. I've always been remembering your kindness.
-
-## License
-
-[GNU General Public License v3.0](LICENSE)
+Looking for alternatives? [https://awesome-go.com/#database](https://awesome-go.com/#database).

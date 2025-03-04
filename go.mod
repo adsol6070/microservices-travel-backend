@@ -56,6 +56,7 @@ require (
 	github.com/go-playground/validator/v10 v10.25.0 // indirect
 	github.com/gorilla/handlers v1.5.2 // indirect
 	github.com/leodido/go-urn v1.4.0 // indirect
+	github.com/lib/pq v1.10.9 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/natefinch/lumberjack v2.0.0+incompatible // indirect
 	github.com/pelletier/go-toml/v2 v2.2.3 // indirect

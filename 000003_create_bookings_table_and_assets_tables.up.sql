@@ -22,6 +22,20 @@ CREATE TYPE booking_status AS ENUM (
 
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
+-- Create a table for rooms (optional, if not already present)
+CREATE TABLE rooms (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),    -- Room ID as UUID
+    hotel_id UUID NOT NULL,                            -- Foreign key to the hotels table
+    room_type VARCHAR(50),                -- Type of room (Single, Double, Suite, etc.)
+    capacity INT NOT NULL,                -- Capacity (max number of guests)
+    price DECIMAL(10, 2),                 -- Price per night for the room
+    available BOOLEAN DEFAULT TRUE,       -- Whether the room is available
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- Timestamp when the room was created
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- Timestamp when the room was last updated
+    
+    CONSTRAINT fk_hotel FOREIGN KEY (hotel_id) REFERENCES hotels(id) ON DELETE CASCADE -- Foreign Key for Hotel
+);
+
 CREATE TABLE bookings (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),   -- Unique booking ID
     asset_id INT NOT NULL,                -- Asset ID for the room or property
@@ -76,19 +90,6 @@ CREATE TABLE bookings (
     external_channel VARCHAR(100),          -- Channel provided by the external API (if different)
     api_last_synced TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- Timestamp of last sync with external API
 
-    CONSTRAINT fk_room FOREIGN KEY (room_id) REFERENCES rooms(id) ON DELETE CASCADE,  -- Foreign Key for Room
+    CONSTRAINT fk_room FOREIGN KEY (room_id) REFERENCES rooms(id) ON DELETE CASCADE  -- Foreign Key for Room
 );
 
--- Create a table for rooms (optional, if not already present)
-CREATE TABLE rooms (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),    -- Room ID as UUID
-    hotel_id UUID NOT NULL,                            -- Foreign key to the hotels table
-    room_type VARCHAR(50),                -- Type of room (Single, Double, Suite, etc.)
-    capacity INT NOT NULL,                -- Capacity (max number of guests)
-    price DECIMAL(10, 2),                 -- Price per night for the room
-    available BOOLEAN DEFAULT TRUE,       -- Whether the room is available
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- Timestamp when the room was created
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- Timestamp when the room was last updated
-
-    CONSTRAINT fk_hotel FOREIGN KEY (hotel_id) REFERENCES hotels(id) ON DELETE CASCADE -- Foreign Key for Hotel
-);

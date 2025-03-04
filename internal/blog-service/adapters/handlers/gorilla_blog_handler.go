@@ -9,6 +9,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
+	"github.com/lib/pq"
 )
 
 type BlogHandler struct {
@@ -36,6 +37,7 @@ func (h *BlogHandler) CreateBlog(w http.ResponseWriter, r *http.Request) {
 	}
 
 	blog.ID = uuid.New().String()
+	blog.Tags = pq.StringArray(blog.Tags)
 
 	createdBlog, err := h.blogService.CreateBlog(r.Context(), &blog)
 	if err != nil {

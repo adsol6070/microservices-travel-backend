@@ -1,20 +1,24 @@
 package models
 
-import "time"
+import (
+	"time"
+
+	"github.com/lib/pq"
+)
 
 type Blog struct {
-	ID          string     `json:"id"`
-	Title       string     `json:"title"`
-	Slug        string     `json:"slug"`
-	Content     string     `json:"content"`
-	AuthorID    string     `json:"author_id"`
-	Tags        []string   `json:"tags"`
-	Category    string     `json:"category"`
-	Thumbnail   string     `json:"thumbnail"`
-	PublishedAt *time.Time `json:"published_at,omitempty"`
-	Status      string     `json:"status"`
-	CreatedAt   time.Time  `json:"created_at"`
-	UpdatedAt   time.Time  `json:"updated_at"`
+	ID          string         `json:"id"`
+	Title       string         `json:"title"`
+	Slug        string         `json:"slug"`
+	Content     string         `json:"content"`
+	AuthorID    string         `json:"author_id"`
+	Tags        pq.StringArray `json:"tags" gorm:"type:text[]"`
+	Category    string         `json:"category"`
+	Thumbnail   string         `json:"thumbnail"`
+	PublishedAt *time.Time     `json:"published_at,omitempty"`
+	Status      string         `json:"status"`
+	CreatedAt   time.Time      `json:"created_at"`
+	UpdatedAt   time.Time      `json:"updated_at"`
 }
 
 type CreateBlogRequest struct {

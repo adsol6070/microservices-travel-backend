@@ -3,9 +3,9 @@ package services
 import (
 	"context"
 	"errors"
-	"log"
 	"microservices-travel-backend/internal/blog-service/domain/models"
 	"microservices-travel-backend/internal/blog-service/domain/ports"
+	"microservices-travel-backend/pkg/utils"
 	"time"
 )
 
@@ -18,14 +18,9 @@ func NewBlogService(blogRepo ports.BlogRepositoryPort) *BlogService {
 }
 
 func (s *BlogService) CreateBlog(ctx context.Context, blogDetails *models.Blog) (*models.Blog, error) {
-	if err := s.validateBlogDetails(blogDetails); err != nil {
-		return nil, err
-	}
-
+	blogDetails.Slug = utils.GenerateUniqueSlug(ctx, blogDetails.Title, s.blogRepo.SlugExists)
 	blogDetails.CreatedAt = time.Now()
 	blogDetails.UpdatedAt = blogDetails.CreatedAt
-
-	log.Print("Creating blog", blogDetails)
 
 	createdBlog, err := s.blogRepo.Create(ctx, blogDetails)
 	if err != nil {
@@ -65,13 +60,6 @@ func (s *BlogService) UpdateBlog(ctx context.Context, blogID string, updatedDeta
 		return nil, errors.New("blog not found")
 	}
 
-	if updatedDetails.Title != "" {
-		existingBlog.Title = updatedDetails.Title
-	}
-	if updatedDetails.Content != "" {
-		existingBlog.Content = updatedDetails.Content
-	}
-
 	existingBlog.UpdatedAt = time.Now()
 
 	updatedBlog, err := s.blogRepo.Update(ctx, blogID, existingBlog)
@@ -95,12 +83,3 @@ func (s *BlogService) DeleteBlog(ctx context.Context, blogID string) error {
 	return nil
 }
 
-func (s *BlogService) validateBlogDetails(blog *models.Blog) error {
-	if blog.Title == "" {
-		return errors.New("title is required")
-	}
-	if blog.Content == "" {
-		return errors.New("content is required")
-	}
-	return nil
-}

@@ -6,6 +6,8 @@ import (
 
 	"microservices-travel-backend/internal/blog-service/domain/models"
 	"microservices-travel-backend/internal/blog-service/domain/ports"
+	"microservices-travel-backend/pkg/response"
+	validator "microservices-travel-backend/pkg/validation"
 
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
@@ -32,79 +34,88 @@ func (h *BlogHandler) RegisterRoutes(router *mux.Router) {
 func (h *BlogHandler) CreateBlog(w http.ResponseWriter, r *http.Request) {
 	var blog models.Blog
 	if err := json.NewDecoder(r.Body).Decode(&blog); err != nil {
-		http.Error(w, "invalid request payload", http.StatusBadRequest)
+		response.BadRequest(w, "Invalid request body")
 		return
 	}
-
+	if err := validator.ValidateStruct(blog); err != nil {
+		response.BadRequest(w, err.Error())
+		return
+	}
 	blog.ID = uuid.New().String()
 	blog.Tags = pq.StringArray(blog.Tags)
 
 	createdBlog, err := h.blogService.CreateBlog(r.Context(), &blog)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		response.InternalServerError(w, "Failed to create blog")
 		return
 	}
 
-	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(createdBlog)
+	response.Success(w, http.StatusCreated, "Blog created successfully", createdBlog)
 }
-
 func (h *BlogHandler) GetBlogByID(w http.ResponseWriter, r *http.Request) {
 	id := mux.Vars(r)["id"]
+
 	blog, err := h.blogService.GetBlogByID(r.Context(), id)
 	if err != nil {
-		http.Error(w, "blog not found", http.StatusNotFound)
+		response.NotFound(w, "Blog not found")
 		return
 	}
 
-	json.NewEncoder(w).Encode(blog)
+	response.Success(w, http.StatusOK, "Blog retrieved successfully", blog)
 }
 
 func (h *BlogHandler) GetAllBlogs(w http.ResponseWriter, r *http.Request) {
 	blogs, err := h.blogService.GetAllBlogs(r.Context())
 	if err != nil {
-		http.Error(w, "could not retrieve blogs", http.StatusInternalServerError)
+		response.InternalServerError(w, "Could not retrieve blogs")
 		return
 	}
 
-	json.NewEncoder(w).Encode(blogs)
+	response.Success(w, http.StatusOK, "Blogs retrieved successfully", blogs)
 }
 
 func (h *BlogHandler) GetBlogsByAuthorID(w http.ResponseWriter, r *http.Request) {
 	authorID := mux.Vars(r)["authorID"]
+
 	blogs, err := h.blogService.GetBlogsByAuthor(r.Context(), authorID)
 	if err != nil {
-		http.Error(w, "could not retrieve blogs", http.StatusInternalServerError)
+		response.InternalServerError(w, "Could not retrieve blogs")
 		return
 	}
 
-	json.NewEncoder(w).Encode(blogs)
+	response.Success(w, http.StatusOK, "Blogs retrieved successfully", blogs)
 }
 
 func (h *BlogHandler) UpdateBlog(w http.ResponseWriter, r *http.Request) {
 	id := mux.Vars(r)["id"]
 	var blog models.Blog
+
 	if err := json.NewDecoder(r.Body).Decode(&blog); err != nil {
-		http.Error(w, "invalid request payload", http.StatusBadRequest)
+		response.BadRequest(w, "Invalid request payload")
+		return
+	}
+
+	if err := validator.ValidateStruct(blog); err != nil {
+		response.BadRequest(w, err.Error())
 		return
 	}
 
 	updatedBlog, err := h.blogService.UpdateBlog(r.Context(), id, &blog)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		response.InternalServerError(w, "Failed to update blog")
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(updatedBlog)
+	response.Success(w, http.StatusOK, "Blog updated successfully", updatedBlog)
 }
 
 func (h *BlogHandler) DeleteBlog(w http.ResponseWriter, r *http.Request) {
 	id := mux.Vars(r)["id"]
+
 	if err := h.blogService.DeleteBlog(r.Context(), id); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		response.InternalServerError(w, "Failed to delete blog")
 		return
 	}
 
-	w.WriteHeader(http.StatusNoContent)
+	response.Success(w, http.StatusNoContent, "Blog deleted successfully", nil)
 }

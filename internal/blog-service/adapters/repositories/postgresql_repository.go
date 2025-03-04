@@ -97,3 +97,12 @@ func (r *PostgreSQLBlogRepository) Delete(ctx context.Context, id string) error 
 	}
 	return nil
 }
+
+func (r *PostgreSQLBlogRepository) SlugExists(ctx context.Context, slug string) bool {
+	var count int64
+	err := r.db.WithContext(ctx).Table("blogs").Where("slug = ?", slug).Count(&count).Error
+	if err != nil {
+		return false
+	}
+	return count > 0
+}

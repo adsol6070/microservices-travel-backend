@@ -33,9 +33,13 @@ FROM base AS dev
 # Copy only service-specific files
 COPY  .air.toml /blog-service/.air.toml
 COPY  cmd/blog-service /blog-service/cmd/blog-service
-COPY  config/shared /user-service/config/shared
+COPY  config/shared /blog-service/config/shared
 COPY  internal/blog-service /blog-service/internal/blog-service
 COPY  pkg/middlewares /blog-service/pkg/middlewares
+COPY  pkg/utils /blog-service/pkg/utils
+COPY  pkg/logger /blog-service/pkg/logger
+COPY  pkg/response /blog-service/pkg/response
+COPY  pkg/validation /blog-service/pkg/validation
 
 # Inject service name into the .air.toml file dynamically
 RUN sed -i 's/\$SERVICE_NAME/blog-service/' /blog-service/.air.toml
@@ -53,11 +57,14 @@ FROM base AS builder
 
 # Copy only necessary service-specific files
 COPY  cmd/blog-service /blog-service/cmd/blog-service
-COPY  cmd/blog-service /blog-service/cmd/blog-service
-COPY  config/shared /user-service/config/shared
+COPY  config/shared /blog-service/config/shared
 COPY  internal/blog-service /blog-service/internal/blog-service
 COPY  pkg/middlewares /blog-service/pkg/middlewares
 COPY  pkg/security /blog-service/pkg/security
+COPY  pkg/utils /blog-service/pkg/utils
+COPY  pkg/logger /blog-service/pkg/logger
+COPY  pkg/response /blog-service/pkg/response
+COPY  pkg/validation /blog-service/pkg/validation
 
 # Compile the Go application
 RUN go build -o /blog-service/bin/blog-service ./cmd/blog-service
@@ -77,7 +84,7 @@ WORKDIR /blog-service
 COPY --from=builder /blog-service/bin/blog-service /blog-service/bin/blog-service
 
 # Ensure correct permissions
-RUN chown -R appuser:appgroup /user-service
+RUN chown -R appuser:appgroup /blog-service
 
 # Set non-root user
 USER appuser

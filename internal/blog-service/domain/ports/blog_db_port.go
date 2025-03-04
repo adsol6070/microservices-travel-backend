@@ -12,4 +12,5 @@ type BlogRepositoryPort interface {
 	GetByAuthor(ctx context.Context, authorID string) ([]*models.Blog, error)
 	Update(ctx context.Context, id string, blog *models.Blog) (*models.Blog, error)
 	Delete(ctx context.Context, id string) error
+	SlugExists(ctx context.Context, slug string) bool
 }

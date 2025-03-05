@@ -5,6 +5,7 @@ import (
 	"errors"
 	"microservices-travel-backend/internal/blog-service/domain/models"
 	"microservices-travel-backend/internal/blog-service/domain/ports"
+	"microservices-travel-backend/pkg/utils"
 	"time"
 )
 
@@ -17,6 +18,7 @@ func NewBlogCategoryService(categoryRepo ports.BlogCategoryRepositoryPort) *Blog
 }
 
 func (s *BlogCategoryService) CreateCategory(ctx context.Context, categoryDetails *models.BlogCategory) (*models.BlogCategory, error) {
+	categoryDetails.Slug = utils.GenerateUniqueSlug(ctx, categoryDetails.Name, s.categoryRepo.CategoryExists)
 	categoryDetails.CreatedAt = time.Now()
 	categoryDetails.UpdatedAt = categoryDetails.CreatedAt
 
@@ -49,7 +51,8 @@ func (s *BlogCategoryService) UpdateCategory(ctx context.Context, categoryID str
 	if err != nil {
 		return nil, errors.New("category not found")
 	}
-
+	existingCategory.Name = updatedDetails.Name
+	existingCategory.Slug = utils.GenerateUniqueSlug(ctx, updatedDetails.Name, s.categoryRepo.CategoryExists)
 	existingCategory.UpdatedAt = time.Now()
 
 	updatedCategory, err := s.categoryRepo.Update(ctx, categoryID, existingCategory)

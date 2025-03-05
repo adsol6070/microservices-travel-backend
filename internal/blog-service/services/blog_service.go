@@ -59,6 +59,7 @@ func (s *BlogService) UpdateBlog(ctx context.Context, blogID string, updatedDeta
 	if err != nil {
 		return nil, errors.New("blog not found")
 	}
+	existingBlog.Slug = utils.GenerateUniqueSlug(ctx, updatedDetails.Title, s.blogRepo.SlugExists)
 
 	existingBlog.UpdatedAt = time.Now()
 

@@ -22,23 +22,23 @@ type Blog struct {
 }
 
 type CreateBlogRequest struct {
-	Title     string   `json:"title" validate:"required,min=5,max=100"`
-	Content   string   `json:"content" validate:"required,min=20"`
-	AuthorID  string   `json:"author_id" validate:"required,uuid"`
-	Tags      []string `json:"tags,omitempty" validate:"dive,required"`
-	Category  string   `json:"category,omitempty" validate:"required"`
-	Thumbnail string   `json:"thumbnail,omitempty" validate:"omitempty,url"`
-	Status    string   `json:"status" validate:"required,oneof=draft published"`
+	Title     string         `json:"title" validate:"required,min=5,max=100"`
+	Content   string         `json:"content" validate:"required,min=20"`
+	AuthorID  string         `json:"author_id" validate:"required,uuid"`
+	Tags      pq.StringArray `json:"tags" gorm:"type:text[]"`
+	Category  string         `json:"category,omitempty" validate:"omitempty"`
+	Thumbnail string         `json:"thumbnail,omitempty" validate:"omitempty,url"`
+	Status    string         `json:"status" validate:"required,oneof=draft published"`
 }
 
 // UpdateBlogRequest with validation tags
 type UpdateBlogRequest struct {
-	Title     *string   `json:"title,omitempty" validate:"omitempty,min=5,max=100"`
-	Content   *string   `json:"content,omitempty" validate:"omitempty,min=20"`
-	Tags      *[]string `json:"tags,omitempty" validate:"omitempty,dive,required"`
-	Category  *string   `json:"category,omitempty" validate:"omitempty"`
-	Thumbnail *string   `json:"thumbnail,omitempty" validate:"omitempty,url"`
-	Status    *string   `json:"status,omitempty" validate:"omitempty,oneof=draft published"`
+	Title     *string        `json:"title,omitempty" validate:"omitempty,min=5,max=100"`
+	Content   *string        `json:"content,omitempty" validate:"omitempty,min=20"`
+	Tags      pq.StringArray `json:"tags" gorm:"type:text[]"`
+	Category  *string        `json:"category,omitempty"`
+	Thumbnail *string        `json:"thumbnail,omitempty" validate:"omitempty,url"`
+	Status    *string        `json:"status,omitempty" validate:"omitempty,oneof=draft published"`
 }
 
 // DeleteBlogRequest with validation tags

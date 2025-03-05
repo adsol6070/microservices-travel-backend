@@ -87,7 +87,7 @@ func (r *PostgreSQLBlogCategoryRepository) Delete(ctx context.Context, id string
 	return nil
 }
 
-func (r *PostgreSQLBlogCategoryRepository) NameExists(ctx context.Context, name string) bool {
+func (r *PostgreSQLBlogCategoryRepository) CategoryExists(ctx context.Context, name string) bool {
 	var count int64
 	err := r.db.WithContext(ctx).Table("blog_categories").Where("name = ?", name).Count(&count).Error
 	if err != nil {

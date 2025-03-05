@@ -15,13 +15,20 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to create blog repository: %v", err)
 	}
+	blogCatgeoryRepo, err := repositories.NewPostgreSQLBlogCategoryRepository()
+	if err != nil {
+		log.Fatalf("Failed to create blog category repository: %v", err)
+	}
 
 	blogService := services.NewBlogService(blogRepo)
+	blogCategoryService := services.NewBlogCategoryService(blogCatgeoryRepo)
 
 	blogHandler := handlers.NewBlogHandler(blogService)
+	blogCategoryHandler := handlers.NewBlogCategoryHandler(blogCategoryService)
 
 	router := mux.NewRouter()
 	blogHandler.RegisterRoutes(router)
+	blogCategoryHandler.RegisterRoutes(router)
 
 	port := ":7200"
 	log.Printf("Starting blog service on port %s...", port)

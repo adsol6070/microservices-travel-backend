@@ -5,6 +5,7 @@ import (
 	"microservices-travel-backend/internal/blog-service/adapters/handlers"
 	"microservices-travel-backend/internal/blog-service/adapters/repositories"
 	"microservices-travel-backend/internal/blog-service/services"
+	middleware "microservices-travel-backend/pkg/middlewares"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -32,7 +33,7 @@ func main() {
 
 	port := ":7200"
 	log.Printf("Starting blog service on port %s...", port)
-	if err := http.ListenAndServe(port, router); err != nil {
+	if err := http.ListenAndServe(port, middleware.CORSMiddleware(router)); err != nil {
 		log.Fatalf("Failed to start blog service: %v", err)
 	}
 }

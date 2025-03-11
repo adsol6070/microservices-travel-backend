@@ -25,6 +25,7 @@ func NewBlogHandler(service ports.BlogServicePort) *BlogHandler {
 func (h *BlogHandler) RegisterRoutes(router *mux.Router) {
 	router.HandleFunc("/blogs", h.CreateBlog).Methods(http.MethodPost)
 	router.HandleFunc("/blogs/{id}", h.GetBlogByID).Methods(http.MethodGet)
+	router.HandleFunc("/blogs/category/{category}", h.GetBlogByCategory).Methods(http.MethodGet)
 	router.HandleFunc("/blogs", h.GetAllBlogs).Methods(http.MethodGet)
 	router.HandleFunc("/blogs/author/{authorID}", h.GetBlogsByAuthorID).Methods(http.MethodGet)
 	router.HandleFunc("/blogs/{id}", h.UpdateBlog).Methods(http.MethodPut)
@@ -52,10 +53,23 @@ func (h *BlogHandler) CreateBlog(w http.ResponseWriter, r *http.Request) {
 
 	response.Success(w, http.StatusCreated, "Blog created successfully", createdBlog)
 }
+
 func (h *BlogHandler) GetBlogByID(w http.ResponseWriter, r *http.Request) {
 	id := mux.Vars(r)["id"]
 
 	blog, err := h.blogService.GetBlogByID(r.Context(), id)
+	if err != nil {
+		response.NotFound(w, "Blog not found")
+		return
+	}
+
+	response.Success(w, http.StatusOK, "Blog retrieved successfully", blog)
+}
+
+func (h *BlogHandler) GetBlogByCategory(w http.ResponseWriter, r *http.Request) {
+	category := mux.Vars(r)["category"]
+
+	blog, err := h.blogService.GetBlogByCategory(r.Context(), category)
 	if err != nil {
 		response.NotFound(w, "Blog not found")
 		return

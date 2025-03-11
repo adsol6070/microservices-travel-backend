@@ -3,6 +3,7 @@ package utils
 import (
 	"context"
 	"strconv"
+	"strings"
 
 	"github.com/gosimple/slug"
 )
@@ -23,4 +24,10 @@ func GenerateUniqueSlug(ctx context.Context, title string, slugExists SlugExists
 	}
 
 	return slugToCheck
+}
+
+func GenerateSlugToTitle(slug string) string {
+	titleConverted := strings.ReplaceAll(slug, "-", " ")
+
+	return titleConverted
 }

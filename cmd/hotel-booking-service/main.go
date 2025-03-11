@@ -11,25 +11,11 @@ import (
 	"microservices-travel-backend/internal/shared/api_provider/amadeus/hotels"
 	"microservices-travel-backend/internal/shared/api_provider/google/places"
 	"microservices-travel-backend/pkg/logger"
+	middleware "microservices-travel-backend/pkg/middlewares"
 
 	"github.com/gorilla/mux"
 	"go.uber.org/zap"
 )
-
-func corsMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Access-Control-Allow-Origin", "*")
-		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
-
-		if r.Method == "OPTIONS" {
-			w.WriteHeader(http.StatusOK)
-			return
-		}
-
-		next.ServeHTTP(w, r)
-	})
-}
 
 func main() {
 
@@ -56,7 +42,7 @@ func main() {
 	serverPort := "5100"
 	logger.Info("Server starting", zap.String("port", serverPort))
 
-	if err := http.ListenAndServe(":"+serverPort, corsMiddleware(router)); err != nil {
+	if err := http.ListenAndServe(":"+serverPort, middleware.CORSMiddleware(router)); err != nil {
 		logger.Error("Failed to start server", zap.Error(err))
 	}
 }

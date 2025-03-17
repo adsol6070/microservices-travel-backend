@@ -61,6 +61,17 @@ func (r *PostgreSQLBlogRepository) GetByID(ctx context.Context, id string) (*mod
 	return &blog, nil
 }
 
+func (r *PostgreSQLBlogRepository) GetByCategory(ctx context.Context, category string) ([]*models.Blog, error) {
+	var blog []*models.Blog
+	if err := r.db.WithContext(ctx).Table("blogs").Where("category = ?", category).Find(&blog).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return blog, nil
+}
+
 func (r *PostgreSQLBlogRepository) GetAll(ctx context.Context) ([]*models.Blog, error) {
 	var blogs []*models.Blog
 	if err := r.db.WithContext(ctx).Table("blogs").Find(&blogs).Error; err != nil {

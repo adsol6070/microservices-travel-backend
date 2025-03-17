@@ -27,7 +27,6 @@ func GenerateUniqueSlug(ctx context.Context, title string, slugExists SlugExists
 }
 
 func GenerateSlugToTitle(slug string) string {
-	titleConverted := strings.ReplaceAll(slug, "-", " ")
-
-	return titleConverted
+	categoryConverted := strings.ReplaceAll(slug, "-", " ")
+	return categoryConverted
 }

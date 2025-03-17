@@ -38,9 +38,8 @@ func (s *BlogService) GetBlogByID(ctx context.Context, blogID string) (*models.B
 	return blog, nil
 }
 
-func (s *BlogService) GetBlogByCategory(ctx context.Context, category string) (*models.Blog, error) {
-	blogCategoryTitle := utils.GenerateSlugToTitle(category)
-	blog, err := s.blogRepo.GetByID(ctx, blogCategoryTitle)
+func (s *BlogService) GetBlogByCategory(ctx context.Context, category string) ([]*models.Blog, error) {
+	blog, err := s.blogRepo.GetByCategory(ctx, category)
 	if err != nil {
 		return nil, errors.New("blog not found")
 	}

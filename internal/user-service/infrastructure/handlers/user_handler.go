@@ -20,9 +20,9 @@ func NewUserHandler(r *mux.Router, userUsecase usecase.UserUsecase) {
 
 	r.HandleFunc("/users", handler.CreateUser).Methods(http.MethodPost)
 	r.HandleFunc("/users/{id}", handler.GetUser).Methods(http.MethodGet)
-	r.HandleFunc("/users/{id}", handler.GetUser).Methods(http.MethodPut)
-	r.HandleFunc("/users/{id}", handler.GetUser).Methods(http.MethodDelete)
-	r.HandleFunc("/users", handler.GetUser).Methods(http.MethodGet)
+	r.HandleFunc("/users/{id}", handler.UpdateUser).Methods(http.MethodPut)
+	r.HandleFunc("/users/{id}", handler.DeleteUser).Methods(http.MethodDelete)
+	r.HandleFunc("/users", handler.GetUsers).Methods(http.MethodGet)
 }
 
 func (h *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {

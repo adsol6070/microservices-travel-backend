@@ -9,6 +9,7 @@ import (
 	"microservices-travel-backend/internal/user-service/domain/user"
 	"microservices-travel-backend/internal/user-service/infrastructure/handlers"
 	"microservices-travel-backend/internal/user-service/infrastructure/persistance/postgres"
+	middleware "microservices-travel-backend/pkg/middlewares"
 	"net/http"
 	"os"
 
@@ -48,7 +49,7 @@ func main() {
 	// Set Port and Start Server
 	serverPort := "7100"
 	logger.Printf("Starting server on port %s...\n", "7100")
-	if err := http.ListenAndServe(":"+serverPort, router); err != nil {
+	if err := http.ListenAndServe(":"+serverPort, middleware.CORSMiddleware(router)); err != nil {
 		logger.Fatalf("Failed to start server: %v", err)
 	}
 

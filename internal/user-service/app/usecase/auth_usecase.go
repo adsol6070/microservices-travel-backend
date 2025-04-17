@@ -2,12 +2,12 @@ package usecase
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"microservices-travel-backend/internal/user-service/domain/email"
 	emailDomain "microservices-travel-backend/internal/user-service/domain/email"
 	"microservices-travel-backend/internal/user-service/domain/user"
 	"microservices-travel-backend/internal/user-service/interfaces/service"
-	"fmt"
 )
 
 type AuthUsecaseImpl struct {
@@ -27,7 +27,7 @@ func (u *AuthUsecaseImpl) RegisterUser(ctx context.Context, userDetails *user.Us
 	if err != nil {
 		return err
 	}
-	
+
 	emailMessage := email.Email{
 		To:      userDetails.Email,
 		Subject: "Welcome to Our Platform!",
@@ -62,7 +62,7 @@ func (u *AuthUsecaseImpl) ForgotPassword(ctx context.Context, email string) erro
 		return err
 	}
 
-	resetLink := fmt.Sprintf("https://yourwebsite.com/reset-password?token=%s", resetToken)
+	resetLink := fmt.Sprintf("http://localhost:5173/auth/resetPassword?token=%s", resetToken)
 	emailMessage := emailDomain.Email{
 		To:      user.Email,
 		Subject: "Password Reset Request",

@@ -2,9 +2,12 @@ package handlers
 
 import (
 	"encoding/json"
+	"net/http"
+
 	"microservices-travel-backend/internal/user-service/domain/user"
 	"microservices-travel-backend/internal/user-service/interfaces/usecase"
-	"net/http"
+	"microservices-travel-backend/pkg/response"
+	validator "microservices-travel-backend/pkg/validation"
 
 	"github.com/gorilla/mux"
 )
@@ -20,85 +23,84 @@ func NewUserHandler(r *mux.Router, userUsecase usecase.UserUsecase) {
 
 	r.HandleFunc("/users", handler.CreateUser).Methods(http.MethodPost)
 	r.HandleFunc("/users/{id}", handler.GetUser).Methods(http.MethodGet)
-	r.HandleFunc("/users/{id}", handler.GetUser).Methods(http.MethodPut)
-	r.HandleFunc("/users/{id}", handler.GetUser).Methods(http.MethodDelete)
-	r.HandleFunc("/users", handler.GetUser).Methods(http.MethodGet)
+	r.HandleFunc("/users/{id}", handler.UpdateUser).Methods(http.MethodPut)
+	r.HandleFunc("/users/{id}", handler.DeleteUser).Methods(http.MethodDelete)
+	r.HandleFunc("/users", handler.GetUsers).Methods(http.MethodGet)
 }
 
 func (h *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 	var userDetails user.User
-	decoder := json.NewDecoder(r.Body)
-	if err := decoder.Decode(&userDetails); err != nil {
-		http.Error(w, "Invalid request payload", http.StatusBadRequest)
+	if err := json.NewDecoder(r.Body).Decode(&userDetails); err != nil {
+		response.BadRequest(w, "Invalid request payload")
+		return
+	}
+
+	if err := validator.ValidateStruct(userDetails); err != nil {
+		response.BadRequest(w, err.Error())
 		return
 	}
 
 	createdUser, err := h.userUsecase.CreateUser(r.Context(), &userDetails)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		response.InternalServerError(w, "Failed to create user")
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(createdUser)
+	response.Success(w, http.StatusCreated, "User created successfully", createdUser)
 }
 
 func (h *UserHandler) GetUser(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	userID := vars["id"]
+	userID := mux.Vars(r)["id"]
 
 	user, err := h.userUsecase.GetUser(r.Context(), userID)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusNotFound)
+		response.NotFound(w, "User not found")
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(user)
+	response.Success(w, http.StatusOK, "User retrieved successfully", user)
 }
 
 func (h *UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	userID := vars["id"]
+	userID := mux.Vars(r)["id"]
 
 	var updatedDetails user.User
-	decoder := json.NewDecoder(r.Body)
-	if err := decoder.Decode(&updatedDetails); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+	if err := json.NewDecoder(r.Body).Decode(&updatedDetails); err != nil {
+		response.BadRequest(w, "Invalid request payload")
+		return
+	}
+
+	if err := validator.ValidateStruct(updatedDetails); err != nil {
+		response.BadRequest(w, err.Error())
 		return
 	}
 
 	updatedUser, err := h.userUsecase.UpdateUser(r.Context(), userID, &updatedDetails)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		response.InternalServerError(w, "Failed to update user")
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(updatedUser)
+	response.Success(w, http.StatusOK, "User updated successfully", updatedUser)
 }
 
 func (h *UserHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	userID := vars["id"]
+	userID := mux.Vars(r)["id"]
 
-	err := h.userUsecase.DeleteUser(r.Context(), userID)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusNotFound)
+	if err := h.userUsecase.DeleteUser(r.Context(), userID); err != nil {
+		response.NotFound(w, "User not found")
 		return
 	}
 
-	w.WriteHeader(http.StatusNoContent)
+	response.Success(w, http.StatusNoContent, "User deleted successfully", nil)
 }
 
 func (h *UserHandler) GetUsers(w http.ResponseWriter, r *http.Request) {
 	users, err := h.userUsecase.GetUsers(r.Context())
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		response.InternalServerError(w, "Could not retrieve users")
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(users)
+	response.Success(w, http.StatusOK, "Users retrieved successfully", users)
 }

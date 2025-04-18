@@ -7,6 +7,9 @@ import (
 	"microservices-travel-backend/internal/blog-service/domain/ports"
 	"microservices-travel-backend/pkg/utils"
 	"time"
+
+	"github.com/google/uuid"
+	"github.com/lib/pq"
 )
 
 type BlogService struct {
@@ -17,12 +20,29 @@ func NewBlogService(blogRepo ports.BlogRepositoryPort) *BlogService {
 	return &BlogService{blogRepo: blogRepo}
 }
 
-func (s *BlogService) CreateBlog(ctx context.Context, blogDetails *models.Blog) (*models.Blog, error) {
-	blogDetails.Slug = utils.GenerateUniqueSlug(ctx, blogDetails.Title, s.blogRepo.SlugExists)
-	blogDetails.CreatedAt = time.Now()
-	blogDetails.UpdatedAt = blogDetails.CreatedAt
+func (s *BlogService) CreateBlog(ctx context.Context, blogRequest models.CreateBlogRequest) (*models.Blog, error) {
+	blog := models.Blog{
+		ID:              uuid.New(),
+		Title:           blogRequest.Title,
+		Slug:            blogRequest.Slug,
+		Content:         blogRequest.Content,
+		Excerpt:         blogRequest.Excerpt,
+		MetaTitle:       blogRequest.MetaTitle,
+		MetaDescription: blogRequest.MetaDescription,
+		AuthorID:        blogRequest.AuthorID,
+		Category:        blogRequest.Category,
+		Tags:            blogRequest.Tags,
+		Thumbnail:       blogRequest.Thumbnail,
+		Status:          blogRequest.Status,
+		IsPublished:     blogRequest.IsPublished,
+	}
 
-	createdBlog, err := s.blogRepo.Create(ctx, blogDetails)
+	// Ensure Tags is not nil, set an empty array if missing
+	if blog.Tags == nil {
+		blog.Tags = pq.StringArray{}
+	}
+
+	createdBlog, err := s.blogRepo.Create(ctx, &blog)
 	if err != nil {
 		return nil, errors.New("failed to create blog")
 	}

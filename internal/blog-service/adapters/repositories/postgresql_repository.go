@@ -8,7 +8,6 @@ import (
 	"microservices-travel-backend/internal/blog-service/domain/models"
 	"os"
 
-	"github.com/google/uuid"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
@@ -45,12 +44,6 @@ func NewPostgreSQLBlogRepository() (*PostgreSQLBlogRepository, error) {
 }
 
 func (r *PostgreSQLBlogRepository) Create(ctx context.Context, blog *models.Blog) (*models.Blog, error) {
-	if blog.ID == "" {
-		blog.ID = uuid.New().String()
-	}
-
-	log.Println("Creating blog:", blog)
-
 	if err := r.db.WithContext(ctx).Table("blogs").Create(blog).Error; err != nil {
 		return nil, err
 	}

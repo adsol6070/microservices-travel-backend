@@ -6,7 +6,7 @@ import (
 )
 
 type BlogServicePort interface {
-	CreateBlog(ctx context.Context, blog *models.Blog) (*models.Blog, error)
+	CreateBlog(ctx context.Context, blog models.CreateBlogRequest) (*models.Blog, error)
 	GetBlogByID(ctx context.Context, id string) (*models.Blog, error)
 	GetBlogByCategory(ctx context.Context, category string) ([]*models.Blog, error)
 	GetAllBlogs(ctx context.Context) ([]*models.Blog, error)

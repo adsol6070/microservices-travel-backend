@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"microservices-travel-backend/internal/user-service/domain/user"
 	"microservices-travel-backend/internal/user-service/interfaces/usecase"
+	"microservices-travel-backend/pkg/response"
+	validator "microservices-travel-backend/pkg/validation"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -66,38 +68,42 @@ func (h *AuthHandler) LogoutUser(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]string{"message": "User logged out successfully"})
 }
 
-func (h *AuthHandler) ResetPassword(w http.ResponseWriter, r *http.Request) {
-	var request user.ResetPasswordRequest
-	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
-		http.Error(w, "invalid request payload", http.StatusBadRequest)
-		return
-	}
-
-	// Call the service to reset the password
-	err := h.authUsecase.ResetPassword(r.Context(), request.Token, request.NewPassword)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(map[string]string{"message": "Password reset successfully"})
-}
-
 func (h *AuthHandler) ForgotPassword(w http.ResponseWriter, r *http.Request) {
 	var request user.ForgotPasswordRequest
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
-		http.Error(w, "invalid request payload", http.StatusBadRequest)
+		response.BadRequest(w, "Invalid request payload")
 		return
 	}
 
-	// Call the service layer to handle password reset logic
-	err := h.authUsecase.ForgotPassword(r.Context(), request.Email)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	if err := validator.ValidateStruct(request); err != nil {
+		response.BadRequest(w, err.Error())
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(map[string]string{"message": "Password reset link sent"})
+	if err := h.authUsecase.ForgotPassword(r.Context(), request.Email); err != nil {
+		response.InternalServerError(w, "Failed to send password reset link")
+		return
+	}
+
+	response.Success(w, http.StatusOK, "Password reset link sent", nil)
+}
+
+func (h *AuthHandler) ResetPassword(w http.ResponseWriter, r *http.Request) {
+	var request user.ResetPasswordRequest
+	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+		response.BadRequest(w, "Invalid request payload")
+		return
+	}
+
+	if err := validator.ValidateStruct(request); err != nil {
+		response.BadRequest(w, err.Error())
+		return
+	}
+
+	if err := h.authUsecase.ResetPassword(r.Context(), request.Token, request.NewPassword); err != nil {
+		response.InternalServerError(w, "Failed to reset password")
+		return
+	}
+
+	response.Success(w, http.StatusOK, "Password reset successfully", nil)
 }

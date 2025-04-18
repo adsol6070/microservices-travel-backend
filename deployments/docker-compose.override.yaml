@@ -55,6 +55,10 @@ services:
       - ../internal/shared/rabbitmq:/user-service/internal/shared/rabbitmq
       - ../pkg/middlewares:/user-service/pkg/middlewares
       - ../pkg/security:/user-service/pkg/security
+      - ../pkg/utils:/user-service/pkg/utils
+      - ../pkg/logger:/user-service/pkg/logger
+      - ../pkg/response:/user-service/pkg/response
+      - ../pkg/validation:/user-service/pkg/validation
     ports:
       - "7100:7100"
     command: ["bin/air", "-c", "/user-service/.air.toml"]

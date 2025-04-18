@@ -9,9 +9,7 @@ import (
 	"microservices-travel-backend/pkg/response"
 	validator "microservices-travel-backend/pkg/validation"
 
-	"github.com/google/uuid"
 	"github.com/gorilla/mux"
-	"github.com/lib/pq"
 )
 
 type BlogHandler struct {
@@ -33,19 +31,17 @@ func (h *BlogHandler) RegisterRoutes(router *mux.Router) {
 }
 
 func (h *BlogHandler) CreateBlog(w http.ResponseWriter, r *http.Request) {
-	var blog models.Blog
-	if err := json.NewDecoder(r.Body).Decode(&blog); err != nil {
+	var blogRequest models.CreateBlogRequest
+	if err := json.NewDecoder(r.Body).Decode(&blogRequest); err != nil {
 		response.BadRequest(w, "Invalid request body")
 		return
 	}
-	if err := validator.ValidateStruct(blog); err != nil {
+	if err := validator.ValidateStruct(blogRequest); err != nil {
 		response.BadRequest(w, err.Error())
 		return
 	}
-	blog.ID = uuid.New().String()
-	blog.Tags = pq.StringArray(blog.Tags)
 
-	createdBlog, err := h.blogService.CreateBlog(r.Context(), &blog)
+	createdBlog, err := h.blogService.CreateBlog(r.Context(), blogRequest)
 	if err != nil {
 		response.InternalServerError(w, "Failed to create blog")
 		return

@@ -35,6 +35,10 @@ func JSON(w http.ResponseWriter, statusCode int, success bool, message string, d
 
 // Success sends a standard success response.
 func Success(w http.ResponseWriter, statusCode int, message string, data interface{}) {
+	if statusCode == http.StatusNoContent {
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
 	JSON(w, statusCode, true, message, data, nil)
 }
 

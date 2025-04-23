@@ -9,8 +9,9 @@ type BlogServicePort interface {
 	CreateBlog(ctx context.Context, blog models.CreateBlogRequest) (*models.Blog, error)
 	GetBlogByID(ctx context.Context, id string) (*models.Blog, error)
 	GetBlogByCategory(ctx context.Context, category string) ([]*models.Blog, error)
-	GetAllBlogs(ctx context.Context) ([]*models.Blog, error)
+	GetAllBlogs(ctx context.Context) ([]models.Blog, error)
 	GetBlogsByAuthor(ctx context.Context, authorID string) ([]*models.Blog, error)
-	UpdateBlog(ctx context.Context, id string, blog *models.Blog) (*models.Blog, error)
+	UpdateBlog(ctx context.Context, id string, blog models.UpdateBlogRequest) (*models.Blog, error)
 	DeleteBlog(ctx context.Context, id string) error
+	UpdateBlogStatus(ctx context.Context, id string, status string) (*models.Blog, error)
 }

@@ -1,7 +1,7 @@
 -- Create the blog_categories table
 CREATE TABLE blog_categories (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),  -- Unique category ID
-    name VARCHAR(50) NOT NULL,                       -- Category name
+    name VARCHAR(50) UNIQUE NOT NULL,                       -- Category name
     slug VARCHAR(255) UNIQUE NOT NULL,              -- Unique slug for SEO
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,  -- Created timestamp
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP   -- Last updated timestamp
@@ -11,7 +11,9 @@ CREATE TABLE blog_categories (
 CREATE OR REPLACE FUNCTION update_blog_category_updated_at_column()
 RETURNS TRIGGER AS $$
 BEGIN
-    NEW.updated_at = NOW();
+    IF ROW(NEW.*) IS DISTINCT FROM ROW(OLD.*) THEN
+        NEW.updated_at = NOW();
+    END IF;
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;

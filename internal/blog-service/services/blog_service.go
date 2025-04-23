@@ -7,9 +7,6 @@ import (
 	"microservices-travel-backend/internal/blog-service/domain/ports"
 	"microservices-travel-backend/pkg/utils"
 	"time"
-
-	"github.com/google/uuid"
-	"github.com/lib/pq"
 )
 
 type BlogService struct {
@@ -21,28 +18,7 @@ func NewBlogService(blogRepo ports.BlogRepositoryPort) *BlogService {
 }
 
 func (s *BlogService) CreateBlog(ctx context.Context, blogRequest models.CreateBlogRequest) (*models.Blog, error) {
-	blog := models.Blog{
-		ID:              uuid.New(),
-		Title:           blogRequest.Title,
-		Slug:            blogRequest.Slug,
-		Content:         blogRequest.Content,
-		Excerpt:         blogRequest.Excerpt,
-		MetaTitle:       blogRequest.MetaTitle,
-		MetaDescription: blogRequest.MetaDescription,
-		AuthorID:        blogRequest.AuthorID,
-		Category:        blogRequest.Category,
-		Tags:            blogRequest.Tags,
-		Thumbnail:       blogRequest.Thumbnail,
-		Status:          blogRequest.Status,
-		IsPublished:     blogRequest.IsPublished,
-	}
-
-	// Ensure Tags is not nil, set an empty array if missing
-	if blog.Tags == nil {
-		blog.Tags = pq.StringArray{}
-	}
-
-	createdBlog, err := s.blogRepo.Create(ctx, &blog)
+	createdBlog, err := s.blogRepo.Create(ctx, &blogRequest)
 	if err != nil {
 		return nil, errors.New("failed to create blog")
 	}
@@ -66,7 +42,7 @@ func (s *BlogService) GetBlogByCategory(ctx context.Context, category string) ([
 	return blog, nil
 }
 
-func (s *BlogService) GetAllBlogs(ctx context.Context) ([]*models.Blog, error) {
+func (s *BlogService) GetAllBlogs(ctx context.Context) ([]models.Blog, error) {
 	blogs, err := s.blogRepo.GetAll(ctx)
 	if err != nil {
 		return nil, errors.New("failed to retrieve blogs")
@@ -82,16 +58,47 @@ func (s *BlogService) GetBlogsByAuthor(ctx context.Context, authorID string) ([]
 	return blogs, nil
 }
 
-func (s *BlogService) UpdateBlog(ctx context.Context, blogID string, updatedDetails *models.Blog) (*models.Blog, error) {
-	existingBlog, err := s.blogRepo.GetByID(ctx, blogID)
-	if err != nil {
-		return nil, errors.New("blog not found")
+func (s *BlogService) UpdateBlog(ctx context.Context, blogID string, updatedDetails models.UpdateBlogRequest) (*models.Blog, error) {
+	updates := map[string]interface{}{
+		"updated_at": time.Now(),
 	}
-	existingBlog.Slug = utils.GenerateUniqueSlug(ctx, updatedDetails.Title, s.blogRepo.SlugExists)
 
-	existingBlog.UpdatedAt = time.Now()
+	if updatedDetails.Title != nil {
+		updates["title"] = *updatedDetails.Title
+		updates["slug"] = utils.GenerateUniqueSlug(ctx, *updatedDetails.Title)
+	}
+	if updatedDetails.Content != nil {
+		updates["content"] = *updatedDetails.Content
+	}
+	if updatedDetails.Excerpt != nil {
+		updates["excerpt"] = *updatedDetails.Excerpt
+	}
+	if updatedDetails.MetaTitle != nil {
+		updates["meta_title"] = *updatedDetails.MetaTitle
+	}
+	if updatedDetails.MetaDescription != nil {
+		updates["meta_description"] = *updatedDetails.MetaDescription
+	}
+	if updatedDetails.CategoryID != nil {
+		updates["category_id"] = *updatedDetails.CategoryID
+	}
+	if updatedDetails.Tags != nil {
+		updates["tags"] = updatedDetails.Tags
+	}
+	if updatedDetails.Thumbnail != nil {
+		updates["thumbnail"] = *updatedDetails.Thumbnail
+	}
+	if updatedDetails.Status != nil {
+		updates["status"] = *updatedDetails.Status
+	}
+	if updatedDetails.PublishedAt != nil {
+		updates["published_at"] = *updatedDetails.PublishedAt
+	}
+	if updatedDetails.ScheduledAt != nil {
+		updates["scheduled_at"] = *updatedDetails.ScheduledAt
+	}
 
-	updatedBlog, err := s.blogRepo.Update(ctx, blogID, existingBlog)
+	updatedBlog, err := s.blogRepo.Update(ctx, blogID, updates)
 	if err != nil {
 		return nil, errors.New("failed to update blog")
 	}
@@ -110,4 +117,18 @@ func (s *BlogService) DeleteBlog(ctx context.Context, blogID string) error {
 	}
 
 	return nil
+}
+
+func (s *BlogService) UpdateBlogStatus(ctx context.Context, blogID string, status string) (*models.Blog, error) {
+	updates := map[string]interface{}{
+		"status":     status,
+		"updated_at": time.Now(),
+	}
+
+	updatedBlog, err := s.blogRepo.Update(ctx, blogID, updates)
+	if err != nil {
+		return nil, errors.New("failed to update blog status")
+	}
+
+	return updatedBlog, nil
 }

@@ -62,18 +62,27 @@ func (s *UserService) GetUserByID(ctx context.Context, userID string) (*User, er
 	return user, nil
 }
 
-func (s *UserService) UpdateUser(ctx context.Context, userID string, updatedDetails *User) (*User, error) {
+func (s *UserService) UpdateUser(ctx context.Context, userID string, updatedDetails *UserUpdateRequest) (*User, error) {
 	existingUser, err := s.userRepo.GetByID(ctx, userID)
-	if err != nil {
+	if err != nil || existingUser == nil {
 		return nil, errors.New("user not found")
 	}
 
-	if updatedDetails.Name != "" {
-		existingUser.Name = updatedDetails.Name
+	if updatedDetails.Name != nil {
+		existingUser.Name = *updatedDetails.Name
 	}
-	if updatedDetails.Email != "" && updatedDetails.Email != existingUser.Email {
-		existingUser.Email = updatedDetails.Email
+	if updatedDetails.Email != nil && *updatedDetails.Email != existingUser.Email {
+		existingUser.Email = *updatedDetails.Email
 	}
+	if updatedDetails.Password != nil {
+		hashedPassword, err := security.HashPassword(*updatedDetails.Password)
+		if err != nil {
+			return nil, errors.New("failed to hash password")
+		}
+		existingUser.Password = hashedPassword
+	}
+
+	existingUser.UpdatedAt = time.Now()
 
 	updatedUser, err := s.userRepo.Update(ctx, existingUser)
 	if err != nil {

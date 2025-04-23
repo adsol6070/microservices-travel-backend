@@ -55,6 +55,19 @@ services:
       - ../config/blog-service/prod.env
     restart: on-failure
 
+  invoice-service:
+    build:
+      context: ../
+      dockerfile: build/docker/invoice.Dockerfile
+      target: prod
+    container_name: invoice-service-prod
+    ports:
+      - "8200:8200"
+    env_file:
+      - ../config/shared/prod.env
+      - ../config/invoice-service/prod.env
+    restart: on-failure
+
   email-service:
     build:
       context: ../

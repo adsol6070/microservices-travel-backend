@@ -7,6 +7,7 @@ SERVICE_NAME1 = hotel-booking
 SERVICE_NAME2 = flight-booking
 SERVICE_NAME3 = user-service
 SERVICE_NAME4 = blog-service
+SERVICE_NAME5 = invoice-service
 # DATABASE_URL = "postgres://postgres:royal-dusk-20@travel-db.cd2uyuqoiqtz.ap-south-1.rds.amazonaws.com:5432"
 DATABASE_URL = "postgres://devuser:devpassword@localhost:5432/devdb?sslmode=disable"
 
@@ -19,6 +20,8 @@ SERVICE_NAME3_DEPLOYMENT = deployments/kubernetes/$(SERVICE_NAME3)/deployment.ya
 SERVICE_NAME3_SERVICE = deployments/kubernetes/$(SERVICE_NAME3)/service.yaml
 SERVICE_NAME4_DEPLOYMENT = deployments/kubernetes/$(SERVICE_NAME4)/deployment.yaml
 SERVICE_NAME4_SERVICE = deployments/kubernetes/$(SERVICE_NAME4)/service.yaml
+SERVICE_NAME5_DEPLOYMENT = deployments/kubernetes/$(SERVICE_NAME5)/deployment.yaml
+SERVICE_NAME5_SERVICE = deployments/kubernetes/$(SERVICE_NAME5)/service.yaml
 
 # Docker Compose path for local and production development
 DOCKER_COMPOSE = deployments/docker-compose.yaml
@@ -44,7 +47,7 @@ start: ## Start Kubernetes Cluster (Minikube or Kind)
 	$(MINIKUBE) start
 
 ## Deploy all services using kubectl
-deploy-all: deploy-secrets deploy-$(SERVICE_NAME1) deploy-$(SERVICE_NAME2) deploy-$(SERVICE_NAME3) deploy-$(SERVICE_NAME4)
+deploy-all: deploy-secrets deploy-$(SERVICE_NAME1) deploy-$(SERVICE_NAME2) deploy-$(SERVICE_NAME3) deploy-$(SERVICE_NAME4) deploy-$(SERVICE_NAME5)
 
 deploy-secrets: ## Apply secrets
 	$(KUBECTL) apply -f deployments/kubernetes/shared/shared-secret.yaml
@@ -61,9 +64,13 @@ deploy-$(SERVICE_NAME3): ## Deploy service-name3
 	$(KUBECTL) apply -f $(SERVICE_NAME3_DEPLOYMENT)
 	$(KUBECTL) apply -f $(SERVICE_NAME3_SERVICE)
 
-deploy-$(SERVICE_NAME4): ## Deploy service-name3
+deploy-$(SERVICE_NAME4): ## Deploy service-name4
 	$(KUBECTL) apply -f $(SERVICE_NAME4_DEPLOYMENT)
 	$(KUBECTL) apply -f $(SERVICE_NAME4_SERVICE)
+
+deploy-$(SERVICE_NAME5): ## Deploy service-name5
+	$(KUBECTL) apply -f $(SERVICE_NAME5_DEPLOYMENT)
+	$(KUBECTL) apply -f $(SERVICE_NAME5_SERVICE)
 
 ## Expose services using kubectl port-forward
 forward-$(SERVICE_NAME1): ## Forward service-name1 port
@@ -72,12 +79,15 @@ forward-$(SERVICE_NAME1): ## Forward service-name1 port
 forward-$(SERVICE_NAME2): ## Forward service-name2 port
 	$(KUBECTL) port-forward service/$(SERVICE_NAME2) 6100:6100
 
-forward-$(SERVICE_NAME3): ## Forward service-name2 port
+forward-$(SERVICE_NAME3): ## Forward service-name3 port
 	$(KUBECTL) port-forward service/$(SERVICE_NAME3) 7100:7100
 
 
-forward-$(SERVICE_NAME4): ## Forward service-name2 port
+forward-$(SERVICE_NAME4): ## Forward service-name4 port
 	$(KUBECTL) port-forward service/$(SERVICE_NAME4) 7200:7200
+
+forward-$(SERVICE_NAME5): ## Forward service-name5 port
+	$(KUBECTL) port-forward service/$(SERVICE_NAME5) 8200:8200
 
 ## Clean up Kubernetes resources
 clean: ## Clean up all Kubernetes resources
@@ -89,6 +99,8 @@ clean: ## Clean up all Kubernetes resources
 	$(KUBECTL) delete -f $(SERVICE_NAME3_SERVICE) --ignore-not-found
 	$(KUBECTL) delete -f $(SERVICE_NAME4_DEPLOYMENT) --ignore-not-found
 	$(KUBECTL) delete -f $(SERVICE_NAME4_SERVICE) --ignore-not-found
+	$(KUBECTL) delete -f $(SERVICE_NAME5_DEPLOYMENT) --ignore-not-found
+	$(KUBECTL) delete -f $(SERVICE_NAME5_SERVICE) --ignore-not-found
 
 ## Stop the local Kubernetes cluster
 stop: ## Stop the Kubernetes cluster (Minikube or Kind)
@@ -127,7 +139,7 @@ generate-migration: ## Generate a migration (usage: make generate-migration)
 # The user should provide the name of the migration when running these commands:
 # Example: make generate-migration-hotel MIGRATION_NAME=create_hotels_table
 
-.PHONY: all start deploy-all deploy-$(SERVICE_NAME1) deploy-$(SERVICE_NAME2) \
-    forward-$(SERVICE_NAME1) forward-$(SERVICE_NAME2) clean stop docker-compose-up docker-compose-down \
+.PHONY: all start deploy-all deploy-$(SERVICE_NAME1) deploy-$(SERVICE_NAME2) deploy-$(SERVICE_NAME3) deploy-$(SERVICE_NAME4) deploy-$(SERVICE_NAME5) \
+    forward-$(SERVICE_NAME1) forward-$(SERVICE_NAME2) forward-$(SERVICE_NAME3) forward-$(SERVICE_NAME4) forward-$(SERVICE_NAME5) clean stop docker-compose-up docker-compose-down \
     docker-compose-prod-up docker-compose-prod-down migrate migrate-down \
     generate-migration

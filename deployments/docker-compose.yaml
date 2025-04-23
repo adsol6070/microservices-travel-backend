@@ -15,6 +15,11 @@ services:
     networks:
       - service-network
 
+
+  invoice-service:
+    networks:
+      - service-network
+
   email-service:
     networks:
       - service-network

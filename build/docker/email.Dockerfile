@@ -42,7 +42,7 @@ COPY  internal/shared/rabbitmq /email-service/internal/shared/rabbitmq
 RUN sed -i 's/\$SERVICE_NAME/email-service/' /email-service/.air.toml
 
 # Expose the port the service listens on
-EXPOSE 8100
+EXPOSE 8200
 
 # Run Air for hot reloading
 CMD ["bin/air", "-c", "/email-service/.air.toml"]
@@ -83,7 +83,7 @@ RUN chown -R appuser:appgroup /user-service
 USER appuser
 
 # Expose the application port
-EXPOSE 8100
+EXPOSE 8200
 
 # Run the compiled binary
 CMD ["/email-service/bin/email-service"]

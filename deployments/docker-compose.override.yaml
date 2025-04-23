@@ -88,6 +88,29 @@ services:
     env_file:
       - ../config/shared/dev.env
       - ../config/blog-service/dev.env
+  
+  invoice-service:
+    build:
+      context: ../
+      dockerfile: build/docker/invoice.Dockerfile
+      target: dev
+    container_name: invoice-service-dev
+    volumes:
+      - ../cmd/invoice-service:/invoice-service/cmd/invoice-service
+      - ../config/shared:/invoice-service/config/shared
+      - ../internal/invoice-service:/invoice-service/internal/invoice-service
+      - ../pkg/middlewares:/invoice-service/pkg/middlewares
+      - ../pkg/security:/invoice-service/pkg/security
+      - ../pkg/utils:/invoice-service/pkg/utils
+      - ../pkg/logger:/invoice-service/pkg/logger
+      - ../pkg/response:/invoice-service/pkg/response
+      - ../pkg/validation:/invoice-service/pkg/validation
+    ports:
+      - "8200:8200"
+    command: ["bin/air", "-c", "/invoice-service/.air.toml"]
+    env_file:
+      - ../config/shared/dev.env
+      - ../config/invoice-service/dev.env
 
   email-service:
     build:

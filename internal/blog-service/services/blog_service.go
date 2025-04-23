@@ -99,7 +99,7 @@ func (s *BlogService) UpdateBlog(ctx context.Context, blogID string, updatedDeta
 	if len(updatedDetails.Tags) > 0 {
 		existingBlog.Tags = updatedDetails.Tags
 	}
-	if updatedDetails.AuthorID != "" {
+	if updatedDetails.AuthorID != uuid.Nil {
 		existingBlog.AuthorID = updatedDetails.AuthorID
 	}
 

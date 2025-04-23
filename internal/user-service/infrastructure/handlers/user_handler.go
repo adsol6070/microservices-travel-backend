@@ -64,7 +64,7 @@ func (h *UserHandler) GetUser(w http.ResponseWriter, r *http.Request) {
 func (h *UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	userID := mux.Vars(r)["id"]
 
-	var updatedDetails user.User
+	var updatedDetails user.UserUpdateRequest
 	if err := json.NewDecoder(r.Body).Decode(&updatedDetails); err != nil {
 		response.BadRequest(w, "Invalid request payload")
 		return

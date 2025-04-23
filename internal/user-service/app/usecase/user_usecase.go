@@ -32,7 +32,7 @@ func (u *UserUsecaseImpl) GetUser(ctx context.Context, userID string) (*user.Use
 	return user, nil
 }
 
-func (u *UserUsecaseImpl) UpdateUser(ctx context.Context, userID string, updatedDetails *user.User) (*user.User, error) {
+func (u *UserUsecaseImpl) UpdateUser(ctx context.Context, userID string, updatedDetails *user.UserUpdateRequest) (*user.User, error) {
 	updatedUser, err := u.userService.UpdateUser(ctx, userID, updatedDetails)
 	if err != nil {
 		return nil, err

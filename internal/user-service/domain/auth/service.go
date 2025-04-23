@@ -71,8 +71,9 @@ func (s *AuthService) Login(ctx context.Context, userDetails *user.User) (string
 	}
 
 	claims := map[string]interface{}{
-		"user_id": user.ID,
-		"email":   user.Email,
+		"user_id":   user.ID,
+		"user_name": user.Name,
+		"email":     user.Email,
 	}
 	token, err := security.GenerateJWT(claims)
 	if err != nil {

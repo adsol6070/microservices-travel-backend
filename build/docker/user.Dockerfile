@@ -38,6 +38,10 @@ COPY  config/shared /user-service/config/shared
 COPY  internal/user-service /user-service/internal/user-service
 COPY  internal/shared/rabbitmq /user-service/internal/shared/rabbitmq
 COPY  pkg/middlewares /user-service/pkg/middlewares
+COPY  pkg/utils /user-service/pkg/utils
+COPY  pkg/logger /user-service/pkg/logger
+COPY  pkg/response /user-service/pkg/response
+COPY  pkg/validation /user-service/pkg/validation
 
 # Inject service name into the .air.toml file dynamically
 RUN sed -i 's/\$SERVICE_NAME/user-service/' /user-service/.air.toml
@@ -61,6 +65,10 @@ COPY  internal/user-service /user-service/internal/user-service
 COPY  internal/shared/rabbitmq /user-service/internal/shared/rabbitmq
 COPY  pkg/middlewares /user-service/pkg/middlewares
 COPY  pkg/security /user-service/pkg/security
+COPY  pkg/utils /user-service/pkg/utils
+COPY  pkg/logger /user-service/pkg/logger
+COPY  pkg/response /user-service/pkg/response
+COPY  pkg/validation /user-service/pkg/validation
 
 # Compile the Go application
 RUN go build -o /user-service/bin/user-service ./cmd/user-service

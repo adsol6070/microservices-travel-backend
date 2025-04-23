@@ -27,9 +27,17 @@ func main() {
 	blogHandler := handlers.NewBlogHandler(blogService)
 	blogCategoryHandler := handlers.NewBlogCategoryHandler(blogCategoryService)
 
+	// imageUploadMiddleware, err := middleware.NewImageUploadMiddleware("ap-southeast-1", "travel-blogs", "images", middleware.StorageS3)
+	imageUploadMiddleware, err := middleware.NewImageUploadMiddleware("", "", "uploads", middleware.StorageLocal, "http://localhost:7200")
+	if err != nil {
+		log.Fatalf("Failed to create image upload middleware: %v", err)
+	}
+
 	router := mux.NewRouter()
-	blogHandler.RegisterRoutes(router)
+	blogHandler.RegisterRoutes(router, *imageUploadMiddleware)
 	blogCategoryHandler.RegisterRoutes(router)
+
+	router.PathPrefix("/uploads/").Handler(http.StripPrefix("/uploads/", http.FileServer(http.Dir("uploads"))))
 
 	port := ":7200"
 	log.Printf("Starting blog service on port %s...", port)
